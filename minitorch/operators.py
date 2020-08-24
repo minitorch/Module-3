@@ -1,15 +1,7 @@
-"""
-Operators
-----------
-
-
-Basic math operations as well as a few warmup problems
-for testing out your functional programming chops in python.
-
-"""
-
-
 import math
+
+## Task 0.1
+## Mathematical operators
 
 
 def mul(x, y):
@@ -37,11 +29,28 @@ def lt(x, y):
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
+def eq(x, y):
+    ":math:`f(x) =` 1.0 if x is equal to y else 0.0"
+    raise NotImplementedError('Need to include this file from past assignment.')
+
+
+def max(x, y):
+    ":math:`f(x) =` x if x is greater than y else y"
+    raise NotImplementedError('Need to include this file from past assignment.')
+
+
 def sigmoid(x):
     r"""
     :math:`f(x) =  \frac{1.0}{(1.0 + e^{-x})}`
 
     (See `<https://en.wikipedia.org/wiki/Sigmoid_function>`_ .)
+
+    Calculate as
+
+    :math:`f(x) =  \frac{1.0}{(1.0 + e^{-x})}` if x >=0 else :math:`\frac{e^x}{(1.0 + e^{x})}`
+
+    for stability.
+
     """
     raise NotImplementedError('Need to include this file from past assignment.')
 
@@ -77,9 +86,17 @@ def log_back(a, b):
     return b / (a + EPS)
 
 
-#
-# Higher-order functions.
-#
+def inv(x):
+    ":math:`f(x) = 1/x`"
+    return 1.0 / x
+
+
+def inv_back(a, b):
+    return -(1.0 / a ** 2) * b
+
+
+## Task 0.3
+## Higher-order functions.
 
 
 def map(fn):
@@ -101,7 +118,7 @@ def map(fn):
 
 
 def negList(ls):
-    "Use :func:`map` and :func:`neg` negate each element in `ls`"
+    "Use :func:`map` and :func:`neg` to negate each element in `ls`"
     return map(neg)(ls)
 
 
@@ -118,7 +135,7 @@ def zipWith(fn):
 
     Returns:
         function : takes two equally sized lists `ls1` and `ls2`, produce a new list by
-    applying fn(x, y) one each pair of elements.
+        applying fn(x, y) one each pair of elements.
 
     """
     raise NotImplementedError('Need to include this file from past assignment.')

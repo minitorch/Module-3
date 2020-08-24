@@ -6,8 +6,8 @@ from .autodiff import FunctionBase, Variable
 from . import operators
 import random
 from .tensor_ops import TensorOps
-from .util import assert_close
 from .tensor_data import TensorData
+import numpy as np
 
 
 # Construction
@@ -33,6 +33,24 @@ def tensor(ls, shape=None):
     if not shape:
         shape = (len(ls),)
     return Tensor.make(ls, shape)
+
+
+def tensor_fromlist(ls):
+    def shape(ls):
+        if isinstance(ls, list):
+            return [len(ls)] + shape(ls[0])
+        else:
+            return []
+
+    def flatten(ls):
+        if isinstance(ls, list):
+            return [y for x in ls for y in flatten(x)]
+        else:
+            return [ls]
+
+    cur = flatten(ls)
+    shape = shape(ls)
+    return tensor(cur, tuple(shape))
 
 
 # Tensor class
@@ -70,6 +88,9 @@ class Tensor(Variable):
     def dims(self):
         return self._tensor.dims
 
+    def to_numpy(self):
+        return self.contiguous()._tensor._storage.reshape(self.shape)
+
     def contiguous(self):
         return self.tf.Copy.apply(self)
 
@@ -90,10 +111,13 @@ class Tensor(Variable):
         return self.tf.Mul.apply(self, self.ensure_tensor(b))
 
     def __truediv__(self, b):
-        return self.tf.Mul.apply(self, tensor([1 / b]))
+        return self.tf.Mul.apply(self, self.tf.Inv.apply(self.ensure_tensor(b)))
 
     def __lt__(self, b):
         return self.tf.LT.apply(self, self.ensure_tensor(b))
+
+    def __eq__(self, b):
+        return self.tf.EQ.apply(self, self.ensure_tensor(b))
 
     def __gt__(self, b):
         return self.tf.LT.apply(self.ensure_tensor(b), self)
@@ -109,6 +133,9 @@ class Tensor(Variable):
 
     def log(self):
         return self.tf.Log.apply(self)
+
+    def exp(self):
+        return self.tf.Exp.apply(self)
 
     def sum(self, dim=None):
         return self.tf.Sum.apply(self, dim)
@@ -195,13 +222,17 @@ def make_tensor_functions(backend):
     sigmoid_map = backend.map(operators.sigmoid)
     relu_map = backend.map(operators.relu)
     log_map = backend.map(operators.log)
+    exp_map = backend.map(operators.exp)
     id_map = backend.map(operators.id)
+    inv_map = backend.map(operators.inv)
 
     add_zip = backend.zip(operators.add)
     mul_zip = backend.zip(operators.mul)
     lt_zip = backend.zip(operators.lt)
+    eq_zip = backend.zip(operators.eq)
     relu_back_zip = backend.zip(operators.relu_back)
     log_back_zip = backend.zip(operators.log_back)
+    inv_back_zip = backend.zip(operators.inv_back)
 
     add_reduce = backend.reduce(operators.add)
 
@@ -218,6 +249,17 @@ def make_tensor_functions(backend):
             @staticmethod
             def backward(ctx, grad_output):
                 return neg_map(grad_output)
+
+        class Inv(Function):
+            @staticmethod
+            def forward(ctx, t1):
+                ctx.save_for_backward(t1)
+                return inv_map(t1)
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                t1 = ctx.saved_values
+                return inv_back_zip(t1, grad_output)
 
         class Add(Function):
             @staticmethod
@@ -264,6 +306,15 @@ def make_tensor_functions(backend):
             def backward(ctx, grad_output):
                 raise NotImplementedError('Need to include this file from past assignment.')
 
+        class Exp(Function):
+            @staticmethod
+            def forward(ctx, a):
+                raise NotImplementedError('Need to include this file from past assignment.')
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                raise NotImplementedError('Need to include this file from past assignment.')
+
         class Sum(Function):
             @staticmethod
             def forward(ctx, a, dim):
@@ -287,6 +338,15 @@ def make_tensor_functions(backend):
                 raise NotImplementedError('Need to include this file from past assignment.')
 
         class LT(Function):
+            @staticmethod
+            def forward(ctx, a, b):
+                raise NotImplementedError('Need to include this file from past assignment.')
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                raise NotImplementedError('Need to include this file from past assignment.')
+
+        class EQ(Function):
             @staticmethod
             def forward(ctx, a, b):
                 raise NotImplementedError('Need to include this file from past assignment.')
@@ -366,4 +426,4 @@ def grad_check(f, *vals):
     for i, x in enumerate(vals):
         ind = x._tensor.sample()
         check = central_difference(f, *vals, arg=i, ind=ind)
-        assert_close(x.grad[ind], check)
+        np.testing.assert_allclose(x.grad[ind], check, 1e-2, 1e-2)

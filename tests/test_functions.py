@@ -1,6 +1,6 @@
 import minitorch
 import pytest
-from minitorch import assert_close
+from .strategies import assert_close
 
 
 @pytest.mark.task3_1
