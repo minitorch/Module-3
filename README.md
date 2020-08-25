@@ -1,4 +1,6 @@
-# Minit Torch Module 3
+# MiniTorch Module 3
+
+<img src="https://minitorch.github.io/_images/match.png" width="100px">
 
 * Docs: https://minitorch.github.io/
 
@@ -8,4 +10,6 @@ This module requires `tensor.py`, `tensor_ops.py`, `tensor_data.py`, `operators.
 
 * Tests:
 
-> python run_tests.py
+```
+python run_tests.py
+```
