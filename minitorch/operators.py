@@ -25,7 +25,7 @@ def neg(x):
 
 
 def lt(x, y):
-    ":math:`f(x) =` 1.0 if x is greater than y else 0.0"
+    ":math:`f(x) =` 1.0 if x is less than y else 0.0"
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
@@ -109,10 +109,11 @@ def map(fn):
     See `<https://en.wikipedia.org/wiki/Map_(higher-order_function)>`_
 
     Args:
-        fn (one-arg function): process one value
+        fn (one-arg function): Function from one value to one value.
 
     Returns:
-        function : a function that takes a list and applies `fn` to each element
+        function : A function that takes a list, applies `fn` to each element, and returns a
+        new list
     """
     raise NotImplementedError('Need to include this file from past assignment.')
 
@@ -135,7 +136,7 @@ def zipWith(fn):
 
     Returns:
         function : takes two equally sized lists `ls1` and `ls2`, produce a new list by
-        applying fn(x, y) one each pair of elements.
+        applying fn(x, y) on each pair of elements.
 
     """
     raise NotImplementedError('Need to include this file from past assignment.')

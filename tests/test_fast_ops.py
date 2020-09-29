@@ -5,7 +5,7 @@ from .strategies import tensors, shaped_tensors, assert_close
 from .test_tensor import one_arg, two_arg, reduce
 
 # TESTS are the same as test_tensor with different backend
-FastTensorFunctions = minitorch.make_tensor_functions(minitorch.FastOps)
+FastTensorFunctions = minitorch.make_tensor_backend(minitorch.FastOps)
 
 
 @given(tensors(backend=FastTensorFunctions))

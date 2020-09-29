@@ -5,7 +5,7 @@ from .strategies import tensors, shaped_tensors, assert_close
 from .test_tensor import one_arg, two_arg, reduce
 
 # TESTS are the same as test_tensor with different backend
-CudaTensorFunctions = minitorch.make_tensor_functions(minitorch.CudaOps)
+CudaTensorFunctions = minitorch.make_tensor_backend(minitorch.CudaOps)
 
 
 @given(tensors(backend=CudaTensorFunctions))

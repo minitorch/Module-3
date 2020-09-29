@@ -17,10 +17,10 @@ def index_to_position(index, strides):
     storage based on strides.
 
     Args:
-       index (array-like): index tuple of ints
-       strides (array-like): tensor strides
+        index (array-like): index tuple of ints
+        strides (array-like): tensor strides
 
-    Return:
+    Returns:
         int : position in storage
     """
 
@@ -35,12 +35,12 @@ def count(position, shape, out_index):
     may not be the inverse of `index_to_position`.
 
     Args:
-       position (int): current position
-       shape (tuple): tensor shape
-       out_index (array): the index corresponding to position
+        position (int): current position.
+        shape (tuple): tensor shape.
+        out_index (array): the index corresponding to position.
 
     Returns:
-       None : Fills in `index`.
+      None : Fills in `out_index`.
 
     """
     raise NotImplementedError('Need to include this file from past assignment.')
@@ -48,17 +48,20 @@ def count(position, shape, out_index):
 
 def broadcast_index(big_index, big_shape, shape, out_index):
     """
-    Convert an index into a position (see `index_to_position`),
-    when the index is from a broadcasted shape. In this case
+    Convert a `big_index` into `big_shape` to a smaller `out_index`
+    into `shape` following broadcasting rules. In this case
     it may be larger or with more dimensions than the `shape`
     given. Additional dimensions may need to be mapped to 0 or
     removed.
 
     Args:
-       big_index (array-like): multidimensional index of bigger tensor
-       big_shape (array-like): tensor shape of bigger tensor
-       shape (array-like): tensor shape of smaller tensor
-       out_index (array-like): multidimensional index of smaller tensor
+        big_index (array-like): multidimensional index of bigger tensor
+        big_shape (array-like): tensor shape of bigger tensor
+        shape (array-like): tensor shape of smaller tensor
+        out_index (array-like): multidimensional index of smaller tensor
+
+    Returns:
+        None : Fills in `out_index`.
     """
     raise NotImplementedError('Need to include this file from past assignment.')
 
@@ -68,12 +71,14 @@ def shape_broadcast(shape1, shape2):
     Broadcast two shapes to create a new union shape.
 
     Args:
-       shape1 (tuple): first shape
-       shape2 (tuple): second shape
+        shape1 (tuple) : first shape
+        shape2 (tuple) : second shape
 
     Returns:
-       tuple: broadcasted shape
+        tuple : broadcasted shape
 
+    Raises:
+        IndexingError : if cannot broadcast
     """
     raise NotImplementedError('Need to include this file from past assignment.')
 
@@ -114,7 +119,12 @@ class TensorData:
             self._storage = numba.cuda.to_device(self._storage)
 
     def is_contiguous(self):
-        "Check that the layout is contiguous, i.e. outer dimensions have bigger strides than inner dimensions. "
+        """
+        Check that the layout is contiguous, i.e. outer dimensions have bigger strides than inner dimensions.
+
+        Returns:
+            bool : True if contiguous
+        """
         last = 1e9
         for stride in self._strides:
             if stride > last:
@@ -168,10 +178,10 @@ class TensorData:
         Permute the dimensions of the tensor.
 
         Args:
-           order (list): a permutation of the dimensions
+            order (list): a permutation of the dimensions
 
         Returns:
-           :class:`TensorData`: a new TensorData with the same storage and a new dimension order.
+            :class:`TensorData`: a new TensorData with the same storage and a new dimension order.
         """
         assert list(sorted(order)) == list(
             range(len(self.shape))

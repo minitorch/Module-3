@@ -1,3 +1,4 @@
+import numba
 from numba import cuda
 from .tensor_data import (
     count,

@@ -6,7 +6,7 @@ from .tensor_data import (
     MAX_DIMS,
 )
 from numba import njit, prange
-from .tensor import Function
+from .tensor_functions import Function
 
 count = njit()(count)
 index_to_position = njit()(index_to_position)

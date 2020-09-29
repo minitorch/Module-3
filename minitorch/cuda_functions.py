@@ -1,3 +1,4 @@
+import numba
 from numba import cuda
 
 from .tensor_data import (
@@ -6,9 +7,7 @@ from .tensor_data import (
     broadcast_index,
     MAX_DIMS,
 )
-import numpy
-import numpy as np
-from .tensor import Function
+from .tensor_functions import Function
 
 count = cuda.jit(device=True)(count)
 index_to_position = cuda.jit(device=True)(index_to_position)
