@@ -7,14 +7,19 @@ PTS = 50
 DATASET = datasets.Xor(PTS, vis=True)
 HIDDEN = 10
 RATE = 0.5
-MM = False
-BACKEND = minitorch.make_tensor_functions(minitorch.FastOps)
+
+
+# Change which backend to use
+
+# Module-2 backend
 # BACKEND = minitorch.TensorFunctions
+
+BACKEND = minitorch.make_tensor_functions(minitorch.FastOps)
 # BACKEND = minitorch.make_tensor_functions(minitorch.CudaOps)
 
 
 def RParam(*shape):
-    r = 2 * (minitorch.rand(shape) - 0.5)
+    r = 2 * (minitorch.rand(shape, backend=BACKEND) - 0.5)
     return minitorch.Parameter(r)
 
 
@@ -23,14 +28,9 @@ class Network(minitorch.Module):
         super().__init__()
 
         # Submodules
-        if not MM:
-            self.layer1 = Linear(2, HIDDEN)
-            self.layer2 = Linear(HIDDEN, HIDDEN)
-            self.layer3 = Linear(HIDDEN, 1)
-        else:
-            self.layer1 = MMLinear(2, HIDDEN)
-            self.layer2 = MMLinear(HIDDEN, HIDDEN)
-            self.layer3 = MMLinear(HIDDEN, 1)
+        self.layer1 = Linear(2, HIDDEN)
+        self.layer2 = Linear(HIDDEN, HIDDEN)
+        self.layer3 = Linear(HIDDEN, 1)
 
     def forward(self, x):
         raise NotImplementedError('Need to include this file from past assignment.')
@@ -44,30 +44,15 @@ class Linear(minitorch.Module):
         self.out_size = out_size
 
     def forward(self, x):
-        raise NotImplementedError('Need to include this file from past assignment.')
-
-
-class MMLinear(minitorch.Module):
-    def __init__(self, in_size, out_size):
-        super().__init__()
-        self.weights = RParam(in_size, out_size)
-        self.bias = RParam(out_size)
-        self.out_size = out_size
-
-    def forward(self, x):
         # TODO: Implement for Task 3.5.
         raise NotImplementedError('Need to implement for Task 3.5')
 
 
 model = Network()
 data = DATASET
-for p in model.parameters():
-    p.value.type_(BACKEND)
 
-X = minitorch.tensor_fromlist(data.X)
-y = minitorch.tensor(data.y)
-X.type_(BACKEND)
-y.type_(BACKEND)
+X = minitorch.tensor_fromlist(data.X, backend=BACKEND)
+y = minitorch.tensor(data.y, backend=BACKEND)
 
 
 losses = []

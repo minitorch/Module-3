@@ -137,7 +137,29 @@ def reduce(fn, start=0.0):
     return ret
 
 
+@njit(parallel=True)
+def tensor_matrix_multiply(
+    out, out_shape, out_strides, a, a_shape, a_strides, b, b_shape, b_strides
+):
+
+    # TODO: Implement for Task 3.1.
+    raise NotImplementedError('Need to implement for Task 3.1')
+
+
+def matrix_multiply(a, b):
+    # Create out shape
+    ls = list(a.shape)
+    assert a.shape[-1] == b.shape[-2]
+    ls[-1] = b.shape[-1]
+    out = a.zeros(tuple(ls))
+
+    # Call main function
+    tensor_matrix_multiply(*out.tuple(), *a.tuple(), *b.tuple())
+    return out
+
+
 class FastOps:
     map = map
     zip = zip
     reduce = reduce
+    matrix_multiply = matrix_multiply

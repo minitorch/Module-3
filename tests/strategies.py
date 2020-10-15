@@ -1,6 +1,6 @@
 import minitorch
 from hypothesis import settings
-from hypothesis.strategies import composite, floats, integers, lists
+from hypothesis.strategies import composite, floats, integers, lists, permutations
 import numpy as np
 
 settings.register_profile("ci", deadline=None)
@@ -35,7 +35,13 @@ def tensor_data(draw, numbers=floats(), shape=None):
         shape = draw(shapes())
     size = int(minitorch.prod(shape))
     data = draw(lists(numbers, min_size=size, max_size=size))
-    return minitorch.TensorData(data, shape)
+    permute = draw(permutations(range(len(shape))))
+    permute_shape = tuple([shape[i] for i in permute])
+    reverse_permute = [a[0] for a in sorted(enumerate(permute), key=lambda a: a[1])]
+    td = minitorch.TensorData(data, permute_shape)
+    ret = td.permute(*reverse_permute)
+    assert ret.shape[0] == shape[0]
+    return ret
 
 
 @composite
@@ -66,7 +72,9 @@ def shaped_tensors(
     for i in range(n):
         data = draw(lists(numbers, min_size=td.size, max_size=td.size))
         values.append(
-            minitorch.Tensor(minitorch.TensorData(data, td.shape), backend=backend)
+            minitorch.Tensor(
+                minitorch.TensorData(data, td.shape, td.strides), backend=backend
+            )
         )
     return values
 

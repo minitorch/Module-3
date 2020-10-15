@@ -171,7 +171,11 @@ def reduce(fn, start=0.0):
     return ret
 
 
-class CudaOps:
-    map = map
-    zip = zip
-    reduce = reduce
+@cuda.jit()
+def tensor_matrix_multiply(
+    out, out_shape, out_strides, out_size, a, a_shape, a_strides, b, b_shape, b_strides
+):
+    # TODO: Implement for Task 3.4.
+    raise NotImplementedError('Need to implement for Task 3.4')
+    # TODO: Implement for Task 3.4.
+    raise NotImplementedError('Need to implement for Task 3.4')

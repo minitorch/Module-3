@@ -10,7 +10,10 @@ from .tensor_data import (
 
 def tensor_map(fn):
     """
-    Higher-order tensor map function.
+    Higher-order tensor map function ::
+
+      fn_map = tensor_map(fn)
+      fn_map(out, ... )
 
     Args:
         fn: function from float-to-float to apply
@@ -33,7 +36,11 @@ def tensor_map(fn):
 
 def map(fn):
     """
-    Higher-order tensor map function
+    Higher-order tensor map function ::
+
+      fn_map = map(fn)
+      b = fn_map(a)
+
 
     Args:
         fn: function from float-to-float to apply.
@@ -42,7 +49,7 @@ def map(fn):
                should broadcast with `a`
 
     Returns:
-        :class:`TensorData` : new tensor data
+        :class:`Tensor` : new tensor
     """
 
     f = tensor_map(fn)
@@ -58,7 +65,11 @@ def map(fn):
 
 def tensor_zip(fn):
     """
-    Higher-order tensor zipWith (or map2) function.
+    Higher-order tensor zipWith (or map2) function. ::
+
+      fn_zip = tensor_zip(fn)
+      fn_zip(out, ...)
+
 
     Args:
         fn: function mapping two floats to float to apply
@@ -94,7 +105,10 @@ def tensor_zip(fn):
 
 def zip(fn):
     """
-    Higher-order tensor zip function.
+    Higher-order tensor zip function ::
+
+      fn_zip = zip(fn)
+      c = fn_zip(a, b)
 
     Args:
         fn: function from two floats-to-float to apply
@@ -102,7 +116,7 @@ def zip(fn):
         b (:class:`TensorData`): tensor to zip over
 
     Returns:
-        :class:`TensorData` : new tensor data
+        :class:`Tensor` : new tensor
     """
 
     f = tensor_zip(fn)
@@ -121,7 +135,10 @@ def zip(fn):
 
 def tensor_reduce(fn):
     """
-    Higher-order tensor reduce function.
+    Higher-order tensor reduce function. ::
+
+      fn_reduce = tensor_reduce(fn)
+      c = fn_reduce(out, ...)
 
     Args:
         fn: reduction function mapping two floats to float
@@ -155,7 +172,11 @@ def tensor_reduce(fn):
 
 def reduce(fn, start=0.0):
     """
-    Higher-order tensor reduce function.
+    Higher-order tensor reduce function. ::
+
+      fn_reduce = reduce(fn)
+      reduced = fn_reduce(a, dims)
+
 
     Args:
         fn: function from two floats-to-float to apply
@@ -163,13 +184,16 @@ def reduce(fn, start=0.0):
         dims (list, optional): list of dims to reduce
         out (:class:`TensorData`, optional): tensor to reduce into
 
+
     Returns:
-        :class:`TensorData` : new tensor data
+        :class:`Tensor` : new tensor
     """
 
     f = tensor_reduce(fn)
 
+    # START Code Update
     def ret(a, dims=None, out=None):
+        old_shape = None
         if out is None:
             out_shape = list(a.shape)
             for d in dims:
@@ -177,22 +201,33 @@ def reduce(fn, start=0.0):
             # Other values when not sum.
             out = a.zeros(tuple(out_shape))
             out._tensor._storage[:] = start
+        else:
+            old_shape = out.shape
+            diff = len(a.shape) - len(out.shape)
+            out = out.view(*([1] * diff + list(old_shape)))
 
-        diff = len(a.shape) - len(out.shape)
+        # Assume they are the same dim
+        assert len(out.shape) == len(a.shape)
 
+        # Create a reduce shape / reduce size
         reduce_shape = []
         reduce_size = 1
         for i, s in enumerate(a.shape):
-            if i < diff or out.shape[i - diff] == 1:
+            if out.shape[i] == 1:
                 reduce_shape.append(s)
                 reduce_size *= s
             else:
                 reduce_shape.append(1)
-        assert len(out.shape) == len(a.shape)
+
+        # Apply
         f(*out.tuple(), *a.tuple(), reduce_shape, reduce_size)
+
+        if old_shape is not None:
+            out = out.view(*old_shape)
         return out
 
     return ret
+    # END Code Update
 
 
 class TensorOps:

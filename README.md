@@ -6,7 +6,7 @@
 
 * Overview: https://minitorch.github.io/module3.html
 
-This module requires `tensor.py`, `tensor_ops.py`, `tensor_data.py`, `operators.py`, `modules.py`, and `autodiff.py` from Module 1
+This module requires `tensor_functions.py`, `tensor_data.py`, `operators.py`, `module.py`, and `autodiff.py` from Module 2
 
 * Tests:
 
