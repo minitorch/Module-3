@@ -10,6 +10,10 @@ from .tensor_data import (
 import numpy
 import numpy as np
 
+# This code will CUDA compile fast versions your tensor_data functions.
+# If you get an error, read the docs for NUMBA as to what is allowed
+# in these functions.
+
 count = cuda.jit(device=True)(count)
 index_to_position = cuda.jit(device=True)(index_to_position)
 broadcast_index = cuda.jit(device=True)(broadcast_index)
@@ -17,17 +21,22 @@ broadcast_index = cuda.jit(device=True)(broadcast_index)
 
 def tensor_map(fn):
     """
-    Higher-order tensor map function.
+    CUDA higher-order tensor map function. ::
+
+      fn_map = tensor_map(fn)
+      fn_map(out, ... )
 
     Args:
         fn: function mappings floats-to-floats to apply.
         out (array): storage for out tensor.
         out_shape (array): shape for out tensor.
         out_strides (array): strides for out tensor.
-        out_size (int): size of out
         in_storage (array): storage for in tensor.
         in_shape (array): shape for in tensor.
         in_strides (array): strides for in tensor.
+
+    Returns:
+        None : Fills in `out`
     """
 
     def _map(out, out_shape, out_strides, out_size, in_storage, in_shape, in_strides):
@@ -38,12 +47,14 @@ def tensor_map(fn):
 
 
 def map(fn):
+    # CUDA compile your kernel
     f = tensor_map(cuda.jit(device=True)(fn))
 
     def ret(a, out=None):
         if out is None:
             out = a.zeros(a.shape)
 
+        # Instantiate and run the cuda kernel.
         threadsperblock = 32
         blockspergrid = (out.size + (threadsperblock - 1)) // threadsperblock
         f[blockspergrid, threadsperblock](*out.tuple(), out.size, *a.tuple())
@@ -54,20 +65,25 @@ def map(fn):
 
 def tensor_zip(fn):
     """
-    Higher-order tensor zipWith (or map2) function.
+    CUDA higher-order tensor zipWith (or map2) function ::
+
+      fn_zip = tensor_zip(fn)
+      fn_zip(out, ...)
 
     Args:
         fn: function mappings two floats to float to apply.
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
-        out_size (int) : size of `out`  tensor
         a_storage (array): storage for `a` tensor.
         a_shape (array): shape for `a` tensor.
         a_strides (array): strides for `a` tensor.
         b_storage (array): storage for `b` tensor.
         b_shape (array): shape for `b` tensor.
         b_strides (array): strides for `b` tensor.
+
+    Returns:
+        None : Fills in `out`
     """
 
     def _zip(
@@ -75,10 +91,10 @@ def tensor_zip(fn):
         out_shape,
         out_strides,
         out_size,
-        a,
+        a_storage,
         a_shape,
         a_strides,
-        b,
+        b_storage,
         b_shape,
         b_strides,
     ):
@@ -106,19 +122,21 @@ def zip(fn):
 
 def tensor_reduce(fn):
     """
-    Higher-order tensor reduce function.
+    CUDA higher-order tensor reduce function.
 
     Args:
         fn: reduction function mapping two floats to float.
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
-        out_size (int) : size of `out` tensor
         a_storage (array): storage for `a` tensor.
         a_shape (array): shape for `a` tensor.
         a_strides (array): strides for `a` tensor.
         reduce_shape (array): shape of reduction (1 for dimension kept, shape value for dimensions summed out)
         reduce_size (int): size of reduce shape
+
+    Returns:
+        None : Fills in `out`
     """
 
     def _reduce(
@@ -126,7 +144,7 @@ def tensor_reduce(fn):
         out_shape,
         out_strides,
         out_size,
-        a,
+        a_storage,
         a_shape,
         a_strides,
         reduce_shape,
@@ -173,8 +191,30 @@ def reduce(fn, start=0.0):
 
 @cuda.jit()
 def tensor_matrix_multiply(
-    out, out_shape, out_strides, out_size, a, a_shape, a_strides, b, b_shape, b_strides
+    out, out_shape, out_strides, out_size, a_storage, a_shape, a_strides, b_storage, b_shape, b_strides
 ):
+    """
+    CUDA tensor matrix multiply function.
+
+    Should work for any tensor shapes that broadcast as long as ::
+
+        assert a_shape[-1] == b_shape[-2]
+
+    Args:
+        out (array): storage for `out` tensor
+        out_shape (array): shape for `out` tensor
+        out_strides (array): strides for `out` tensor
+        a_storage (array): storage for `a` tensor
+        a_shape (array): shape for `a` tensor
+        a_strides (array): strides for `a` tensor
+        b_storage (array): storage for `b` tensor
+        b_shape (array): shape for `b` tensor
+        b_strides (array): strides for `b` tensor
+
+    Returns:
+        None : Fills in `out`
+    """
+
     # TODO: Implement for Task 3.4.
     raise NotImplementedError('Need to implement for Task 3.4')
 
