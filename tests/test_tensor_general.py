@@ -37,14 +37,13 @@ two_arg = [
 # Create different backends.
 TensorBackend = minitorch.make_tensor_backend(minitorch.TensorOps)
 FastTensorBackend = minitorch.make_tensor_backend(minitorch.FastOps)
-matmul_tests = [pytest.param(FastTensorBackend, marks=pytest.mark.task3_1)]
-backend_tests = [pytest.param(FastTensorBackend, marks=pytest.mark.task3_2)]
+matmul_tests = [pytest.param(FastTensorBackend, marks=pytest.mark.task3_2)]
+backend_tests = [pytest.param(FastTensorBackend, marks=pytest.mark.task3_1)]
 
 
 if numba.cuda.is_available():
     CudaTensorBackend = minitorch.make_tensor_backend(minitorch.CudaOps, is_cuda=True)
     matmul_tests.append(pytest.param(CudaTensorBackend, marks=pytest.mark.task3_4))
-
     backend_tests.append(pytest.param(CudaTensorBackend, marks=pytest.mark.task3_3))
 
 

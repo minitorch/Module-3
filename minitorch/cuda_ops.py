@@ -31,8 +31,8 @@ def tensor_map(fn):
     """
 
     def _map(out, out_shape, out_strides, out_size, in_storage, in_shape, in_strides):
-        # TODO: Implement for Task GN3.
-        raise NotImplementedError('Need to implement for Task GN3')
+        # TODO: Implement for Task 3.3.
+        raise NotImplementedError('Need to implement for Task 3.3')
 
     return cuda.jit()(_map)
 
@@ -82,8 +82,8 @@ def tensor_zip(fn):
         b_shape,
         b_strides,
     ):
-        # TODO: Implement for Task GN3.
-        raise NotImplementedError('Need to implement for Task GN3')
+        # TODO: Implement for Task 3.3.
+        raise NotImplementedError('Need to implement for Task 3.3')
 
     return cuda.jit()(_zip)
 
@@ -132,8 +132,8 @@ def tensor_reduce(fn):
         reduce_shape,
         reduce_size,
     ):
-        # TODO: Implement for Task GN3.
-        raise NotImplementedError('Need to implement for Task GN3')
+        # TODO: Implement for Task 3.3.
+        raise NotImplementedError('Need to implement for Task 3.3')
 
     return cuda.jit()(_reduce)
 
