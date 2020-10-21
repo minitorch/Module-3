@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 PTS = 50
 DATASET = datasets.Xor(PTS, vis=True)
-HIDDEN = 5
+HIDDEN = 10
 RATE = 0.5
 
 

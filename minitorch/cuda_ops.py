@@ -163,6 +163,7 @@ def reduce(fn, start=0.0):
     f = tensor_reduce(cuda.jit(device=True)(fn))
 
     def ret(a, dims=None, out=None):
+        old_shape = None
         if out is None:
             out_shape = list(a.shape)
             for d in dims:
@@ -170,17 +171,24 @@ def reduce(fn, start=0.0):
             # Other values when not sum.
             out = a.zeros(tuple(out_shape))
             out._tensor._storage[:] = start
-        diff = len(a.shape) - len(out.shape)
+        else:
+            old_shape = out.shape
+            diff = len(a.shape) - len(out.shape)
+            out = out.view(*([1] * diff + list(old_shape)))
 
+        # Assume they are the same dim
+        assert len(out.shape) == len(a.shape)
+
+        # Create a reduce shape / reduce size
         reduce_shape = []
         reduce_size = 1
         for i, s in enumerate(a.shape):
-            if i < diff or out.shape[i - diff] == 1:
+            if out.shape[i] == 1:
                 reduce_shape.append(s)
                 reduce_size *= s
             else:
                 reduce_shape.append(1)
-        assert len(out.shape) == len(a.shape)
+
         threadsperblock = 32
         blockspergrid = (out.size + (threadsperblock - 1)) // threadsperblock
 
