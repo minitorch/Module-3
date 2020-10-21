@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 PTS = 50
 DATASET = datasets.Xor(PTS, vis=True)
-HIDDEN = 10
+HIDDEN = 5
 RATE = 0.5
 
 
@@ -14,8 +14,8 @@ RATE = 0.5
 # Module-2 backend
 # BACKEND = minitorch.TensorFunctions
 
-BACKEND = minitorch.make_tensor_functions(minitorch.FastOps)
-# BACKEND = minitorch.make_tensor_functions(minitorch.CudaOps)
+BACKEND = minitorch.make_tensor_backend(minitorch.FastOps)
+# BACKEND = minitorch.make_tensor_backend(minitorch.CudaOps)
 
 
 def RParam(*shape):
@@ -96,6 +96,10 @@ for epoch in range(250):
             epoch_time,
         )
         im = f"Epoch: {epoch}"
-        data.graph(im, lambda x: model.forward(minitorch.tensor(x, (1, 2)))[0, 0])
+
+        def plot(x):
+            return model.forward(minitorch.tensor(x, (1, 2), backend=BACKEND))[0, 0]
+
+        data.graph(im, plot)
         plt.plot(losses, c="blue")
         data.vis.matplot(plt, win="loss")

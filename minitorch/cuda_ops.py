@@ -191,7 +191,16 @@ def reduce(fn, start=0.0):
 
 @cuda.jit()
 def tensor_matrix_multiply(
-    out, out_shape, out_strides, out_size, a_storage, a_shape, a_strides, b_storage, b_shape, b_strides
+    out,
+    out_shape,
+    out_strides,
+    out_size,
+    a_storage,
+    a_shape,
+    a_strides,
+    b_storage,
+    b_shape,
+    b_strides,
 ):
     """
     CUDA tensor matrix multiply function.

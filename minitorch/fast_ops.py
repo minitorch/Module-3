@@ -12,9 +12,9 @@ from numba import njit, prange
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
-count = njit(parallel=True)(count)
-index_to_position = njit(parallel=True)(index_to_position)
-broadcast_index = njit(parallel=True)(broadcast_index)
+count = njit()(count)
+index_to_position = njit()(index_to_position)
+broadcast_index = njit()(broadcast_index)
 
 
 def tensor_map(fn):
@@ -62,9 +62,8 @@ def map(fn):
         :class:`Tensor` : new tensor
     """
 
-
     # This line JIT compiles your tensor_map
-    f = tensor_map(njit(parallel=True)(fn))
+    f = tensor_map(njit()(fn))
 
     def ret(a, out=None):
         if out is None:
@@ -98,7 +97,17 @@ def tensor_zip(fn):
         None : Fills in `out`
     """
 
-    def _zip(out, out_shape, out_strides, a_storage, a_shape, a_strides, b_storage, b_shape, b_strides):
+    def _zip(
+        out,
+        out_shape,
+        out_strides,
+        a_storage,
+        a_shape,
+        a_strides,
+        b_storage,
+        b_shape,
+        b_strides,
+    ):
         # TODO: Implement for Task 3.1.
         raise NotImplementedError('Need to implement for Task 3.1')
 
@@ -120,7 +129,7 @@ def zip(fn):
     Returns:
         :class:`Tensor` : new tensor
     """
-    f = tensor_zip(njit(parallel=True)(fn))
+    f = tensor_zip(njit()(fn))
 
     def ret(a, b):
         c_shape = shape_broadcast(a.shape, b.shape)
@@ -152,7 +161,14 @@ def tensor_reduce(fn):
     """
 
     def _reduce(
-        out, out_shape, out_strides, a_storage, a_shape, a_strides, reduce_shape, reduce_size
+        out,
+        out_shape,
+        out_strides,
+        a_storage,
+        a_shape,
+        a_strides,
+        reduce_shape,
+        reduce_size,
     ):
         # TODO: Implement for Task 3.1.
         raise NotImplementedError('Need to implement for Task 3.1')
@@ -178,7 +194,7 @@ def reduce(fn, start=0.0):
         :class:`Tensor` : new tensor
     """
 
-    f = tensor_reduce(njit(parallel=True)(fn))
+    f = tensor_reduce(njit()(fn))
 
     def ret(a, dims=None, out=None):
         if out is None:
@@ -208,7 +224,15 @@ def reduce(fn, start=0.0):
 
 @njit(parallel=True)
 def tensor_matrix_multiply(
-    out, out_shape, out_strides, a_storage, a_shape, a_strides, b_storage, b_shape, b_strides
+    out,
+    out_shape,
+    out_strides,
+    a_storage,
+    a_shape,
+    a_strides,
+    b_storage,
+    b_shape,
+    b_strides,
 ):
     """
     NUMBA tensor matrix multiply function.
