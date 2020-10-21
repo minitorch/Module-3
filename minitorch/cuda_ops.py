@@ -31,6 +31,7 @@ def tensor_map(fn):
         out (array): storage for out tensor.
         out_shape (array): shape for out tensor.
         out_strides (array): strides for out tensor.
+        out_size (array): size for out tensor.
         in_storage (array): storage for in tensor.
         in_shape (array): shape for in tensor.
         in_strides (array): strides for in tensor.
@@ -75,6 +76,7 @@ def tensor_zip(fn):
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
+        out_size (array): size for `out` tensor.
         a_storage (array): storage for `a` tensor.
         a_shape (array): shape for `a` tensor.
         a_strides (array): strides for `a` tensor.
@@ -129,6 +131,7 @@ def tensor_reduce(fn):
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
+        out_size (array): size for `out` tensor.
         a_storage (array): storage for `a` tensor.
         a_shape (array): shape for `a` tensor.
         a_strides (array): strides for `a` tensor.
@@ -213,6 +216,7 @@ def tensor_matrix_multiply(
         out (array): storage for `out` tensor
         out_shape (array): shape for `out` tensor
         out_strides (array): strides for `out` tensor
+        out_size (array): size for `out` tensor.
         a_storage (array): storage for `a` tensor
         a_shape (array): shape for `a` tensor
         a_strides (array): strides for `a` tensor
