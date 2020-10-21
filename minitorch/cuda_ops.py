@@ -177,5 +177,24 @@ def tensor_matrix_multiply(
 ):
     # TODO: Implement for Task 3.4.
     raise NotImplementedError('Need to implement for Task 3.4')
-    # TODO: Implement for Task 3.4.
-    raise NotImplementedError('Need to implement for Task 3.4')
+
+
+def matrix_multiply(a, b):
+    ls = list(a.shape)
+    assert a.shape[-1] == b.shape[-2]
+    ls[-1] = b.shape[-1]
+    out = a.zeros(tuple(ls))
+    threadsperblock = 32
+    blockspergrid = (out.size + (threadsperblock - 1)) // threadsperblock
+    tensor_matrix_multiply[blockspergrid, threadsperblock](
+        *out.tuple(), out.size, *a.tuple(), *b.tuple()
+    )
+
+    return out
+
+
+class CudaOps:
+    map = map
+    zip = zip
+    reduce = reduce
+    matrix_multiply = matrix_multiply
