@@ -12,9 +12,9 @@ from numba import njit, prange
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
-count = njit()(count)
-index_to_position = njit()(index_to_position)
-broadcast_index = njit()(broadcast_index)
+count = njit(inline="always")(count)
+index_to_position = njit(inline="always")(index_to_position)
+broadcast_index = njit(inline="always")(broadcast_index)
 
 
 def tensor_map(fn):
@@ -82,7 +82,7 @@ def tensor_zip(fn):
       fn_zip(out, ...)
 
     Args:
-        fn: function mappings two floats to float to apply.
+        fn: function maps two floats to float to apply.
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
@@ -224,7 +224,7 @@ def reduce(fn, start=0.0):
                 reduce_shape.append(1)
 
         # Apply
-        f(*out.tuple(), *a.tuple(), reduce_shape, reduce_size)
+        f(*out.tuple(), *a.tuple(), np.array(reduce_shape), reduce_size)
 
         if old_shape is not None:
             out = out.view(*old_shape)
@@ -275,7 +275,8 @@ def matrix_multiply(a, b):
     """
     Tensor matrix multiply
 
-    Should work for any tensor shapes that broadcast as long as ::
+    Should work for any tensor shapes that broadcast in the first n-2 dims and
+    have ::
 
         assert a.shape[-1] == b.shape[-2]
 

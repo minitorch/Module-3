@@ -134,7 +134,7 @@ def test_permute(backend, data):
     minitorch.grad_check(permute, t1)
 
 
-@pytest.mark.task3_1
+@pytest.mark.task3_2
 def test_mm2():
     a = minitorch.rand((2, 3), backend=FastTensorBackend)
     b = minitorch.rand((3, 4), backend=FastTensorBackend)

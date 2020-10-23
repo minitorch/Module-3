@@ -1,5 +1,5 @@
-import numba
 from numba import cuda
+import numba
 from .tensor_data import (
     count,
     index_to_position,
@@ -127,7 +127,7 @@ def tensor_reduce(fn):
     CUDA higher-order tensor reduce function.
 
     Args:
-        fn: reduction function mapping two floats to float.
+        fn: reduction function maps two floats to float.
         out (array): storage for `out` tensor.
         out_shape (array): shape for `out` tensor.
         out_strides (array): strides for `out` tensor.
@@ -241,9 +241,26 @@ def tensor_matrix_multiply(
 
 
 def matrix_multiply(a, b):
-    ls = list(a.shape)
+    """
+    Tensor matrix multiply
+
+    Should work for any tensor shapes that broadcast in the first n-2 dims and
+    have ::
+
+        assert a.shape[-1] == b.shape[-2]
+
+    Args:
+        a (:class:`Tensor`): tensor a
+        b (:class:`Tensor`): tensor b
+
+    Returns:
+        :class:`Tensor` : new tensor
+    """
+
+    ls = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
+    ls.append(a.shape[-2])
+    ls.append(b.shape[-1])
     assert a.shape[-1] == b.shape[-2]
-    ls[-1] = b.shape[-1]
     out = a.zeros(tuple(ls))
     threadsperblock = 32
     blockspergrid = (out.size + (threadsperblock - 1)) // threadsperblock

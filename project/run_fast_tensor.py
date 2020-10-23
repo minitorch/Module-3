@@ -2,23 +2,49 @@ import minitorch
 import datasets
 import time
 import matplotlib.pyplot as plt
+import argparse
 
-PTS = 50
-DATASET = datasets.Xor(PTS, vis=True)
-HIDDEN = 10
-RATE = 0.5
+parser = argparse.ArgumentParser()
+parser.add_argument("--PTS", type=int, default=50, help="number of points")
+parser.add_argument("--HIDDEN", type=int, default=10, help="number of hiddens")
+parser.add_argument("--RATE", type=float, default=0.5, help="learning rate")
+parser.add_argument("--BACKEND", default="cpu", help="backend mode")
+parser.add_argument("--DATASET", default="xor", help="dataset")
+parser.add_argument("--PLOT", default=False, help="dataset")
+
+args = parser.parse_args()
+
+
+PTS = args.PTS
+
+if args.DATASET == "xor":
+    DATASET = datasets.Xor(PTS, vis=True)
+elif args.DATASET == "simple":
+    DATASET = datasets.Simple(PTS, vis=True)
+elif args.DATASET == "split":
+    DATASET = datasets.Split(PTS, vis=True)
+
+HIDDEN = int(args.HIDDEN)
+RATE = args.RATE
 
 
 # Change which backend to use
 
-# Module-2 backend
-# BACKEND = minitorch.TensorFunctions
-
-BACKEND = minitorch.make_tensor_backend(minitorch.FastOps)
-# BACKEND = minitorch.make_tensor_backend(minitorch.CudaOps)
+if args.BACKEND == "cpu":
+    BACKEND = minitorch.make_tensor_backend(minitorch.FastOps)
+elif args.BACKEND == "old":
+    # Module-2 backend
+    # You can use this to debug, but you will need to add a
+    # Matrix multiplication @ operator
+    BACKEND = minitorch.TensorFunctions
+elif args.BACKEND == "gpu":
+    BACKEND = minitorch.make_tensor_backend(minitorch.CudaOps)
 
 
 def RParam(*shape):
+    p = 1.0
+    for s in shape:
+        p += s
     r = 2 * (minitorch.rand(shape, backend=BACKEND) - 0.5)
     return minitorch.Parameter(r)
 
@@ -33,7 +59,8 @@ class Network(minitorch.Module):
         self.layer3 = Linear(HIDDEN, 1)
 
     def forward(self, x):
-        raise NotImplementedError('Need to include this file from past assignment.')
+        # TODO: Implement for Task 3.5.
+        raise NotImplementedError('Need to implement for Task 3.5')
 
 
 class Linear(minitorch.Module):
@@ -100,6 +127,7 @@ for epoch in range(250):
         def plot(x):
             return model.forward(minitorch.tensor(x, (1, 2), backend=BACKEND))[0, 0]
 
-        data.graph(im, plot)
+        if args.PLOT:
+            data.graph(im, plot)
         plt.plot(losses, c="blue")
         data.vis.matplot(plt, win="loss")
