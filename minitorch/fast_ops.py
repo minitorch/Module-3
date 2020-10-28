@@ -289,9 +289,12 @@ def matrix_multiply(a, b):
     """
 
     # Create out shape
-    ls = list(a.shape)
+    # START CODE CHANGE
+    ls = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
+    ls.append(a.shape[-2])
+    ls.append(b.shape[-1])
     assert a.shape[-1] == b.shape[-2]
-    ls[-1] = b.shape[-1]
+    # END CODE CHANGE
     out = a.zeros(tuple(ls))
 
     # Call main function
