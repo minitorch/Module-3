@@ -191,10 +191,13 @@ def reduce(fn, start=0.0):
 
         threadsperblock = 32
         blockspergrid = (out.size + (threadsperblock - 1)) // threadsperblock
-
         f[blockspergrid, threadsperblock](
             *out.tuple(), out.size, *a.tuple(), np.array(reduce_shape), reduce_size
         )
+        # START CODE CHANGE
+        if old_shape is not None:
+            out = out.view(*old_shape)
+        # END CODE CHANGE
         return out
 
     return ret
