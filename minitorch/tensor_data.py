@@ -24,7 +24,11 @@ def index_to_position(index, strides):
         int : position in storage
     """
 
-    raise NotImplementedError('Need to include this file from past assignment.')
+    # TODO: Implement for Task 2.1.
+    pos = 0
+    for idx, stride in zip(index, strides):
+        pos += idx * stride
+    return pos
 
 
 def count(position, shape, out_index):
@@ -43,7 +47,13 @@ def count(position, shape, out_index):
       None : Fills in `out_index`.
 
     """
-    raise NotImplementedError('Need to include this file from past assignment.')
+    # TODO: Implement for Task 2.1.
+    strides = strides_from_shape(shape)
+    new_position = position
+    for i, stride in enumerate(strides):
+        curr_indice = new_position // stride
+        out_index[i] = curr_indice
+        new_position -= stride * curr_indice
 
 
 def broadcast_index(big_index, big_shape, shape, out_index):
@@ -63,7 +73,13 @@ def broadcast_index(big_index, big_shape, shape, out_index):
     Returns:
         None : Fills in `out_index`.
     """
-    raise NotImplementedError('Need to include this file from past assignment.')
+    # TODO: Implement for Task 2.4.
+    for i in range(len(shape)):
+        if shape[i] > 1:
+            out_index[i] = big_index[i + (len(big_shape) - len(shape))]
+        else:
+            out_index[i] = 0
+    return None
 
 
 def shape_broadcast(shape1, shape2):
@@ -80,7 +96,22 @@ def shape_broadcast(shape1, shape2):
     Raises:
         IndexingError : if cannot broadcast
     """
-    raise NotImplementedError('Need to include this file from past assignment.')
+    # TODO: Implement for Task 2.4.
+    bigger_shape = shape1 if len(shape1) > len(shape2) else shape2
+    union_shape = []
+    for dim1, dim2 in zip(shape1[::-1], shape2[::-1]):  # reverse iterate through tuples
+        # either of the dimension is 1 or they're equal.
+        if dim1 == dim2:
+            union_shape.append(dim1)
+        elif dim1 == 1 or dim2 == 1:
+            union_shape.append(max(dim1, dim2))
+        else:
+            print(shape1, shape2)
+            raise IndexingError("Failed to broadcast {shape1} {shape2}")
+    # add remaining value of big tensor into smaller tensor.
+    for i in range(abs(len(shape1) - len(shape2)) - 1, -1, -1):
+        union_shape.append(bigger_shape[i])
+    return tuple(union_shape[::-1])
 
 
 def strides_from_shape(shape):
@@ -187,7 +218,15 @@ class TensorData:
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
 
-        raise NotImplementedError('Need to include this file from past assignment.')
+        # TODO: Implement for Task 2.1.
+
+        # kinda feels like cheating on the strides here. unittests passing
+        # anyway, will have to get back here later maybe
+        #  https://github.com/numpy/numpy/issues/12436#issuecomment-440788523 makes
+        # me feels a bit confident though
+        new_shape = tuple([self.shape[i] for i in order])
+        new_strides = tuple([self.strides[i] for i in order])
+        return TensorData(self._storage, new_shape, strides=new_strides)
 
     def to_string(self):
         s = ""
