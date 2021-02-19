@@ -39,7 +39,16 @@ def tensor_map(fn):
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError('Need to implement for Task 3.1')
+        # raise NotImplementedError('Need to implement for Task 3.1')
+        size = np.prod(out_shape)  # get the size of the out array
+        in_index = np.zeros(MAX_DIMS, np.int32)
+        out_index = np.zeros(MAX_DIMS, np.int32)
+        for i in prange(size):
+            count(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            k = index_to_position(in_index, in_strides)
+            j = index_to_position(out_index, out_strides)
+            out[j] = fn(in_storage[k])
 
     return njit(parallel=True)(_map)
 
@@ -109,7 +118,19 @@ def tensor_zip(fn):
         b_strides,
     ):
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError('Need to implement for Task 3.1')
+        # raise NotImplementedError('Need to implement for Task 3.1')
+        size = np.prod(out_shape)
+        a_index = np.zeros(MAX_DIMS, np.int32)
+        b_index = np.zeros(MAX_DIMS, np.int32)
+        out_index = np.zeros(MAX_DIMS, np.int32)
+        for i in prange(size):
+            count(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            j = index_to_position(a_index, a_strides)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            k = index_to_position(b_index, b_strides)
+            out[o] = fn(a_storage[j], b_storage[k]) 
 
     return njit(parallel=True)(_zip)
 
@@ -171,7 +192,20 @@ def tensor_reduce(fn):
         reduce_size,
     ):
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError('Need to implement for Task 3.1')
+        # raise NotImplementedError('Need to implement for Task 3.1')
+        out_index = np.zeros(MAX_DIMS, np.int32)
+        a_index = np.zeros(MAX_DIMS, np.int32)
+        for i in prange(len(out)):
+            count(i, out_shape, out_index)
+            o = index_to_position(out_index, out_strides)
+
+            for s in range(reduce_size):
+                count(s, reduce_shape, a_index)
+                for i in range(len(reduce_shape)):
+                    if reduce_shape[i] != 1:
+                        out_index[i] = a_index[i]
+                j = index_to_position(out_index, a_strides)
+                out[o] = fn(out[o], a_storage[j])
 
     return njit(parallel=True)(_reduce)
 

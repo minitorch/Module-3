@@ -119,8 +119,6 @@ def tensor_zip(fn):
             j = index_to_position(a_index, a_strides)
             broadcast_index(out_index, out_shape, b_shape, b_index)
             k = index_to_position(b_index, b_strides)
-            if j == 6 and np.prod(a_shape) == 6 and o == 6 and np.prod(out_shape) == 6:
-                print("a_index ", a_index, "b_index", b_index, "out_index", out_index)
             out[o] = fn(a_storage[j], b_storage[k])
     return _zip
 
