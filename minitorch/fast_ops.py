@@ -193,7 +193,7 @@ def tensor_reduce(fn):
         # TODO: Implement for Task 3.1.
         out_index = np.zeros(MAX_DIMS, np.int32)
         a_index = np.zeros(MAX_DIMS, np.int32)
-        for i in range(len(out)):
+        for i in prange(len(out)):
             count(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
 
