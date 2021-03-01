@@ -197,9 +197,9 @@ def tensor_reduce(fn):
             count(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
 
-            for s in range(reduce_size):
+            for s in prange(reduce_size):
                 count(s, reduce_shape, a_index)
-                for i in prange(len(reduce_shape)):
+                for i in range(len(reduce_shape)):
                     if reduce_shape[i] != 1:
                         out_index[i] = a_index[i]
                 j = index_to_position(out_index, a_strides)
