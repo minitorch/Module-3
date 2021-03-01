@@ -39,7 +39,6 @@ def tensor_map(fn):
 
     def _map(out, out_shape, out_strides, in_storage, in_shape, in_strides):
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError('Need to implement for Task 3.1')
         size = np.prod(out_shape)  # get the size of the out array
         in_index = np.zeros(MAX_DIMS, np.int32)
         out_index = np.zeros(MAX_DIMS, np.int32)
@@ -118,7 +117,6 @@ def tensor_zip(fn):
         b_strides,
     ):
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError('Need to implement for Task 3.1')
         size = np.prod(out_shape)
         a_index = np.zeros(MAX_DIMS, np.int32)
         b_index = np.zeros(MAX_DIMS, np.int32)
@@ -192,16 +190,15 @@ def tensor_reduce(fn):
         reduce_size,
     ):
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError('Need to implement for Task 3.1')
         out_index = np.zeros(MAX_DIMS, np.int32)
         a_index = np.zeros(MAX_DIMS, np.int32)
-        for i in prange(len(out)):
+        for i in range(len(out)):
             count(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
 
             for s in range(reduce_size):
                 count(s, reduce_shape, a_index)
-                for i in range(len(reduce_shape)):
+                for i in prange(len(reduce_shape)):
                     if reduce_shape[i] != 1:
                         out_index[i] = a_index[i]
                 j = index_to_position(out_index, a_strides)

@@ -239,7 +239,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             def forward(ctx, a, order):
                 # TODO: Implement for Task 2.2.
                 ctx.save_for_backward(a.shape)
-                new_tensor_data = a._tensor.permute(order)
+                new_tensor_data = a._tensor.permute(*order)
                 return Tensor.make(
                     new_tensor_data._storage,
                     new_tensor_data.shape,

@@ -48,12 +48,20 @@ def count(position, shape, out_index):
 
     """
     # TODO: Implement for Task 2.1.
-    strides = strides_from_shape(shape)
+    """strides = strides_from_shape(shape)
     new_position = position
     for i, stride in enumerate(strides):
         curr_indice = new_position // stride
         out_index[i] = curr_indice
-        new_position -= stride * curr_indice
+        new_position -= stride * curr_indice"""
+    positions = [0] * len(shape)
+    positions[-1] = position
+    cur_pos = position
+    for i in range(len(shape) - 1, -1, -1):
+        sh = shape[i]
+        out_index[i] = int(positions[i] % sh)
+        # cur_pos //= sh
+        positions[i-1] = positions[i] // sh
 
 
 def broadcast_index(big_index, big_shape, shape, out_index):
@@ -106,7 +114,6 @@ def shape_broadcast(shape1, shape2):
         elif dim1 == 1 or dim2 == 1:
             union_shape.append(max(dim1, dim2))
         else:
-            print(shape1, shape2)
             raise IndexingError("Failed to broadcast {shape1} {shape2}")
     # add remaining value of big tensor into smaller tensor.
     for i in range(abs(len(shape1) - len(shape2)) - 1, -1, -1):
