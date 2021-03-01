@@ -59,9 +59,10 @@ def count(position, shape, out_index):
     cur_pos = position
     for i in range(len(shape) - 1, -1, -1):
         sh = shape[i]
-        out_index[i] = int(positions[i] % sh)
-        # cur_pos //= sh
-        positions[i-1] = positions[i] // sh
+        # out_index[i] = int(positions[i] % sh)
+        out_index[i] = int(cur_pos % sh)
+        cur_pos //= sh
+        # positions[i-1] = positions[i] // sh
 
 
 def broadcast_index(big_index, big_shape, shape, out_index):
