@@ -121,7 +121,7 @@ def tensor_zip(fn):
         size = np.prod(out_shape)
         a_index = np.zeros((size, MAX_DIMS), np.int32)
         b_index = np.zeros((size, MAX_DIMS), np.int32)
-        out_index = np.zeros(size, MAX_DIMS), np.int32)
+        out_index = np.zeros((size, MAX_DIMS), np.int32)
         for i in prange(size):
             count(i, out_shape, out_index[i])
             o = index_to_position(out_index[i], out_strides)
