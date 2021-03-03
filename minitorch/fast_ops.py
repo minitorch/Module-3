@@ -300,7 +300,23 @@ def tensor_matrix_multiply(
     """
 
     # TODO: Implement for Task 3.2.
-    raise NotImplementedError('Need to implement for Task 3.2')
+    # raise NotImplementedError('Need to implement for Task 3.2')
+    size = np.prod(out_shape)
+    out_index = np.zeros(MAX_DIMS, np.int32)
+    a_index = np.zeros(MAX_DIMS, np.int32)
+    b_index = np.zeros(MAX_DIMS, np.int32)
+    for i in range(size):
+        count(i, out_strides, out_index)
+        o = index_to_position(out_index, out_strides)
+        acc = 0.
+        for s in range(len(out)):
+            count(s, a_strides, a_index)
+            count(s, b_strides, b_index)
+            if out_index[0] == a_index[0] and out_index[1] == b_index[1]:
+                j = index_to_position(a_index, a_strides)
+                k = index_to_position(b_index, b_strides)
+                acc += a_storage[j] * b_storage[k]
+        out[o] = acc
 
 
 def matrix_multiply(a, b):
