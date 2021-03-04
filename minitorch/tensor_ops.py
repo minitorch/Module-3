@@ -262,6 +262,89 @@ def reduce(fn, start=0.0):
     return ret
     # END Code Update
 
+def tensor_matrix_multiply(
+    out,
+    out_shape,
+    out_strides,
+    a_storage,
+    a_shape,
+    a_strides,
+    b_storage,
+    b_shape,
+    b_strides,
+):
+    """
+    NUMBA tensor matrix multiply function.
+
+    Should work for any tensor shapes that broadcast as long as ::
+
+        assert a_shape[-1] == b_shape[-2]
+
+    Args:
+        out (array): storage for `out` tensor
+        out_shape (array): shape for `out` tensor
+        out_strides (array): strides for `out` tensor
+        a_storage (array): storage for `a` tensor
+        a_shape (array): shape for `a` tensor
+        a_strides (array): strides for `a` tensor
+        b_storage (array): storage for `b` tensor
+        b_shape (array): shape for `b` tensor
+        b_strides (array): strides for `b` tensor
+
+    Returns:
+        None : Fills in `out`
+    """
+
+    # TODO: Implement for Task 3.2.
+    size = np.prod(out_shape)
+    out_index = np.zeros((len(out), MAX_DIMS), np.int32)
+    a_index = np.zeros(MAX_DIMS, np.int32)
+    b_index = np.zeros(MAX_DIMS, np.int32)
+    for i in range(size):
+        count(i, out_strides, out_index[i])
+        o = index_to_position(out_index[i], out_strides)
+        acc = 0.
+        for s in range(len(out)):
+            count(s, a_strides, a_index)
+            count(s, b_strides, b_index)
+            if out_index[i][-2] == a_index[-2] and out_index[i][-1] == b_index[-1]:
+                j = index_to_position(a_index, a_strides)
+                k = index_to_position(b_index, b_strides)
+                acc += a_storage[j] * b_storage[k]
+        out[o] = acc
+
+
+def matrix_multiply(a, b):
+    """
+    Tensor matrix multiply
+
+    Should work for any tensor shapes that broadcast in the first n-2 dims and
+    have ::
+
+        assert a.shape[-1] == b.shape[-2]
+
+    Args:
+        a (:class:`Tensor`): tensor a
+        b (:class:`Tensor`): tensor b
+
+    Returns:
+        :class:`Tensor` : new tensor
+    """
+
+    # Create out shape
+    # START CODE CHANGE
+    ls = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
+    ls.append(a.shape[-2])
+    ls.append(b.shape[-1])
+    assert a.shape[-1] == b.shape[-2]
+    # END CODE CHANGE
+    out = a.zeros(tuple(ls))
+
+    # Call main function
+    tensor_matrix_multiply(*out.tuple(), *a.tuple(), *b.tuple())
+    return out
+
+
 
 class TensorOps:
     map = map
