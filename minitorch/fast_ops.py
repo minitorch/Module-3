@@ -265,7 +265,7 @@ def reduce(fn, start=0.0):
     return ret
 
 
-@njit(parallel=True)
+# @njit(parallel=True)
 def tensor_matrix_multiply(
     out,
     out_shape,
@@ -304,19 +304,24 @@ def tensor_matrix_multiply(
     out_index = np.zeros((len(out), MAX_DIMS), np.int32)
     a_index = np.zeros(MAX_DIMS, np.int32)
     b_index = np.zeros(MAX_DIMS, np.int32)
-    for i in prange(size):
+    print(a_storage.shape, b_storage.shape, out.shape)
+    for i in range(size):
         count(i, out_strides, out_index[i])
         o = index_to_position(out_index[i], out_strides)
         acc = 0.
-        for s in range(len(out)):
+        a_idxes = []
+        b_idxes = []
+        for s in range(len(a_storage)):
             count(s, a_strides, a_index)
-            count(s, b_strides, b_index)
-            print(a_index, b_index, out_index)
-            if out_index[i][-2] == a_index[-2] and out_index[i][-1] == b_index[-1]:
+            if out_index[i][-2] == a_index[-2]: 
                 j = index_to_position(a_index, a_strides)
-                k = index_to_position(b_index, b_strides)
-                acc += a_storage[j] * b_storage[k]
-        out[o] = acc
+                a_idxes.append(j)
+        for s in range(len(b_storage)):
+            count(s, b_strides, a_index)
+            if out_index[i][-1] == a_index[-1]: 
+                j = index_to_position(b_index, b_strides)
+                b_idxes.append(j)
+        out[o] = sum([a_storage[j] * b_storage[k] for j, k in zip(a_idxes, b_idxes)]) 
 
 
 def matrix_multiply(a, b):
