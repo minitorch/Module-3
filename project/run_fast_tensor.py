@@ -93,7 +93,7 @@ for epoch in range(250):
     prob = (out * y) + (out - 1.0) * (y - 1.0)
     loss = -prob.log()
     (loss.sum().view(1)).backward()
-    total_loss += loss[0]
+    total_loss = loss.sum().view(1)[0]
     losses.append(total_loss)
 
     # Update
