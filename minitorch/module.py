@@ -1,23 +1,22 @@
-## Task 0.4
-## Modules
-
-
 class Module:
     """
+    Modules form a tree that store parameters and other
+    submodules. They make up the basis of neural network stacks.
+
     Attributes:
         _modules (dict of name x :class:`Module`): Storage of the child modules
         _parameters (dict of name x :class:`Parameter`): Storage of the module's parameters
-        mode (string): Mode of operation, can be {"train", "eval"}.
+        training (bool): Whether the module is in training mode or evaluation mode
 
     """
 
     def __init__(self):
         self._modules = {}
         self._parameters = {}
-        self.mode = "train"
+        self.training = True
 
     def modules(self):
-        "Return the child modules of this module."
+        "Return the direct child modules of this module."
         return self.__dict__["_modules"].values()
 
     def train(self):
@@ -34,12 +33,13 @@ class Module:
 
 
         Returns:
-            dict: Each name (key) and :class:`Parameter` (value) under this module.
+            list of pairs: Contains the name and :class:`Parameter` of each ancestor parameter.
         """
         raise NotImplementedError('Need to include this file from past assignment.')
 
     def parameters(self):
-        return self.named_parameters().values()
+        "Enumerate over all the parameters of this module and its descendents."
+        raise NotImplementedError('Need to include this file from past assignment.')
 
     def add_parameter(self, k, v):
         """
@@ -52,7 +52,7 @@ class Module:
         Returns:
             Parameter: Newly created parameter.
         """
-        val = Parameter(v)
+        val = Parameter(v, k)
         self.__dict__["_parameters"][k] = val
         return val
 
@@ -70,8 +70,6 @@ class Module:
 
         if key in self.__dict__["_modules"]:
             return self.__dict__["_modules"][key]
-
-        return self.__getattribute__(key)
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
@@ -115,16 +113,24 @@ class Parameter:
     any value for testing.
     """
 
-    def __init__(self, x=None):
+    def __init__(self, x=None, name=None):
         self.value = x
+        self.name = name
         if hasattr(x, "requires_grad_"):
             self.value.requires_grad_(True)
+            if self.name:
+                self.value.name = self.name
 
     def update(self, x):
         "Update the parameter value."
         self.value = x
         if hasattr(x, "requires_grad_"):
             self.value.requires_grad_(True)
+            if self.name:
+                self.value.name = self.name
 
     def __repr__(self):
         return repr(self.value)
+
+    def __str__(self):
+        return str(self.value)

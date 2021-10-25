@@ -1,14 +1,14 @@
 import minitorch
 from hypothesis import settings
 from hypothesis.strategies import composite, floats, integers, lists, permutations
-import numpy as np
 
 settings.register_profile("ci", deadline=None)
 settings.load_profile("ci")
 
 
 small_ints = integers(min_value=1, max_value=3)
-small_floats = floats(min_value=-100, max_value=100)
+small_floats = floats(min_value=-100, max_value=100, allow_nan=False)
+med_ints = integers(min_value=1, max_value=20)
 
 
 @composite
@@ -21,6 +21,9 @@ def vals(draw, size, number):
 def scalars(draw, min_value=-100000, max_value=100000):
     val = draw(floats(min_value=min_value, max_value=max_value))
     return minitorch.Scalar(val)
+
+
+small_scalars = scalars(min_value=-100, max_value=100)
 
 
 @composite
@@ -53,9 +56,10 @@ def indices(draw, layout):
 def tensors(
     draw,
     numbers=floats(allow_nan=False, min_value=-100, max_value=100),
-    backend=minitorch.TensorFunctions,
+    backend=None,
     shape=None,
 ):
+    backend = minitorch.TensorFunctions if backend is None else backend
     td = draw(tensor_data(numbers, shape=shape))
     return minitorch.Tensor(td, backend=backend)
 
@@ -65,8 +69,9 @@ def shaped_tensors(
     draw,
     n,
     numbers=floats(allow_nan=False, min_value=-100, max_value=100),
-    backend=minitorch.TensorFunctions,
+    backend=None,
 ):
+    backend = minitorch.TensorFunctions if backend is None else backend
     td = draw(tensor_data(numbers))
     values = []
     for i in range(n):
@@ -97,4 +102,12 @@ def matmul_tensors(
 
 
 def assert_close(a, b):
-    np.testing.assert_allclose(a, b, 1e-2, 1e-2)
+    assert minitorch.operators.is_close(a, b), "Failure x=%f y=%f" % (a, b)
+
+
+def assert_close_tensor(a, b):
+    if a.is_close(b).all().item() != 1.0:
+        assert False, (
+            "Tensors are not close \n x.shape=%s \n x=%s \n y.shape=%s \n y=%s \n Diff=%s %s"
+            % (a.shape, a, b.shape, b, a - b, a.is_close(b))
+        )

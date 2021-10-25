@@ -21,3 +21,6 @@ python run_tests.py
 Several of the tests for this assignment will only run if you are on a GPU machine and will not
 run on github's test infrastructure. Please follow the instructions to setup up a colab machine
 to run these tests.
+This assignment requires the following files from the previous assignments.
+
+        minitorch/tensor_data.py minitorch/tensor_functions.py minitorch/tensor_ops.py minitorch/operators.py minitorch/module.py minitorch/autodiff.py minitorch/scalar.py minitorch/module.py project/run_manual.py project/run_scalar.py project/run_tensor.py

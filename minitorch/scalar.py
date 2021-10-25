@@ -3,8 +3,8 @@ from . import operators
 import numpy as np
 
 
-## Task 1.1
-## Derivatives
+# ## Task 1.1
+# Central Difference calculation
 
 
 def central_difference(f, *vals, arg=0, epsilon=1e-6):
@@ -25,8 +25,8 @@ def central_difference(f, *vals, arg=0, epsilon=1e-6):
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
-## Task 1.2 and 1.4
-## Scalar Forward and Backward
+# ## Task 1.2 and 1.4
+# Scalar Forward and Backward
 
 
 class Scalar(Variable):
@@ -39,7 +39,6 @@ class Scalar(Variable):
 
     Attributes:
         data (float): The wrapped scalar value.
-
     """
 
     def __init__(self, v, back=History(), name=None):
@@ -55,13 +54,22 @@ class Scalar(Variable):
     def __truediv__(self, b):
         return Mul.apply(self, Inv.apply(b))
 
+    def __rtruediv__(self, b):
+        return Mul.apply(b, Inv.apply(self))
+
     def __add__(self, b):
         raise NotImplementedError('Need to include this file from past assignment.')
+
+    def __bool__(self):
+        return bool(self.data)
 
     def __lt__(self, b):
         raise NotImplementedError('Need to include this file from past assignment.')
 
     def __gt__(self, b):
+        raise NotImplementedError('Need to include this file from past assignment.')
+
+    def __eq__(self, b):
         raise NotImplementedError('Need to include this file from past assignment.')
 
     def __sub__(self, b):
@@ -83,40 +91,50 @@ class Scalar(Variable):
         raise NotImplementedError('Need to include this file from past assignment.')
 
     def get_data(self):
+        "Returns the raw float value"
         return self.data
 
 
 class ScalarFunction(FunctionBase):
-    "A function that processes and produces Scalar variables."
+    """
+    A wrapper for a mathematical function that processes and produces
+    Scalar variables.
+
+    This is a static class and is never instantiated. We use `class`
+    here to group together the `forward` and `backward` code.
+    """
 
     @staticmethod
     def forward(ctx, *inputs):
-        """
-        Forward call, compute f(`inputs`)
+        r"""
+        Forward call, compute :math:`f(x_0 \ldots x_{n-1})`.
 
         Args:
-            ctx (:class:`Context`): A special container object to save
-                                    any information that may be needed for the call to backward.
-            *inputs (list of floats): Numerical arguments.
+            ctx (:class:`Context`): A container object to save
+                                    any information that may be needed
+                                    for the call to backward.
+            *inputs (list of floats): n-float values :math:`x_0 \ldots x_{n-1}`.
 
-        Should return float the computation of the function :math:`f`
+        Should return float the computation of the function :math:`f`.
         """
-        pass
+        pass  # pragma: no cover
 
     @staticmethod
     def backward(ctx, d_out):
-        """
-        Backward call, compute f'_{x_i}(`inputs`) * d_out
+        r"""
+        Backward call, computes :math:`f'_{x_i}(x_0 \ldots x_{n-1}) \times d_{out}`.
 
         Args:
-            ctx (Context): A special container object holding any information saved during in the corresponding `forward` call.
-            d_out (float): :math:`d_out` term in chain rule.
+            ctx (Context): A container object holding any information saved during in the corresponding `forward` call.
+            d_out (float): :math:`d_out` term in the chain rule.
 
-        Should return the computation of the derivative function :math:`f'_{x_i}` for each input :math:`x_i` times `d_out`.
+        Should return the computation of the derivative function
+        :math:`f'_{x_i}` for each input :math:`x_i` times `d_out`.
+
         """
-        pass
+        pass  # pragma: no cover
 
-    # checks.
+    # Checks.
     variable = Scalar
     data_type = float
 
@@ -127,7 +145,7 @@ class ScalarFunction(FunctionBase):
 
 # Examples
 class Add(ScalarFunction):
-    "Addition function"
+    "Addition function :math:`f(x, y) = x + y`"
 
     @staticmethod
     def forward(ctx, a, b):
@@ -139,7 +157,7 @@ class Add(ScalarFunction):
 
 
 class Log(ScalarFunction):
-    "Log function"
+    "Log function :math:`f(x) = log(x)`"
 
     @staticmethod
     def forward(ctx, a):
@@ -150,18 +168,6 @@ class Log(ScalarFunction):
     def backward(ctx, d_output):
         a = ctx.saved_values
         return operators.log_back(a, d_output)
-
-
-class LT(ScalarFunction):
-    "Less-than function"
-
-    @staticmethod
-    def forward(ctx, a, b):
-        return 1.0 if a < b else 0.0
-
-    @staticmethod
-    def backward(ctx, d_output):
-        return 0.0, 0.0
 
 
 # To implement.
@@ -239,16 +245,56 @@ class Exp(ScalarFunction):
         raise NotImplementedError('Need to include this file from past assignment.')
 
 
-def derivative_check(f, *scalars):
+class LT(ScalarFunction):
+    "Less-than function :math:`f(x) =` 1.0 if x is less than y else 0.0"
 
+    @staticmethod
+    def forward(ctx, a, b):
+        raise NotImplementedError('Need to include this file from past assignment.')
+
+    @staticmethod
+    def backward(ctx, d_output):
+        raise NotImplementedError('Need to include this file from past assignment.')
+
+
+class EQ(ScalarFunction):
+    "Equal function :math:`f(x) =` 1.0 if x is equal to y else 0.0"
+
+    @staticmethod
+    def forward(ctx, a, b):
+        raise NotImplementedError('Need to include this file from past assignment.')
+
+    @staticmethod
+    def backward(ctx, d_output):
+        raise NotImplementedError('Need to include this file from past assignment.')
+
+
+def derivative_check(f, *scalars):
+    """
+    Checks that autodiff works on a python function.
+    Asserts False if derivative is incorrect.
+
+    Parameters:
+        f (function) : function from n-scalars to 1-scalar.
+        *scalars (list of :class:`Scalar`) : n input scalar values.
+    """
     for x in scalars:
         x.requires_grad_(True)
     out = f(*scalars)
     out.backward()
 
     vals = [v for v in scalars]
-
+    err_msg = """
+Derivative check at arguments f(%s) and received derivative f'=%f for argument %d,
+but was expecting derivative f'=%f from central difference."""
     for i, x in enumerate(scalars):
         check = central_difference(f, *vals, arg=i)
-        print(x.derivative, check)
-        np.testing.assert_allclose(x.derivative, check.data, 1e-2, 1e-2)
+        print(str([x.data for x in scalars]), x.derivative, i, check)
+        np.testing.assert_allclose(
+            x.derivative,
+            check.data,
+            1e-2,
+            1e-2,
+            err_msg=err_msg
+            % (str([x.data for x in scalars]), x.derivative, i, check.data),
+        )

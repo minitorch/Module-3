@@ -1,6 +1,6 @@
 import numpy as np
 from .tensor_data import (
-    count,
+    to_index,
     index_to_position,
     broadcast_index,
     shape_broadcast,
@@ -10,10 +10,20 @@ from .tensor_data import (
 
 def tensor_map(fn):
     """
-    Higher-order tensor map function ::
+    Low-level implementation of tensor map between
+    tensors with *possibly different strides*.
 
-      fn_map = tensor_map(fn)
-      fn_map(out, ... )
+    Simple version:
+
+    * Fill in the `out` array by applying `fn` to each
+      value of `in_storage` assuming `out_shape` and `in_shape`
+      are the same size.
+
+    Broadcasted version:
+
+    * Fill in the `out` array by applying `fn` to each
+      value of `in_storage` assuming `out_shape` and `in_shape`
+      broadcast. (`in_shape` must be smaller than `out_shape`).
 
     Args:
         fn: function from float-to-float to apply
@@ -39,8 +49,20 @@ def map(fn):
     Higher-order tensor map function ::
 
       fn_map = map(fn)
-      b = fn_map(a)
+      fn_map(a, out)
+      out
 
+    Simple version::
+
+        for i:
+            for j:
+                out[i, j] = fn(a[i, j])
+
+    Broadcasted version (`a` might be smaller than `out`) ::
+
+        for i:
+            for j:
+                out[i, j] = fn(a[i, 0])
 
     Args:
         fn: function from float-to-float to apply.
@@ -49,7 +71,7 @@ def map(fn):
                should broadcast with `a`
 
     Returns:
-        :class:`Tensor` : new tensor
+        :class:`TensorData` : new tensor data
     """
 
     f = tensor_map(fn)
@@ -65,11 +87,20 @@ def map(fn):
 
 def tensor_zip(fn):
     """
-    Higher-order tensor zipWith (or map2) function. ::
+    Low-level implementation of tensor zip between
+    tensors with *possibly different strides*.
 
-      fn_zip = tensor_zip(fn)
-      fn_zip(out, ...)
+    Simple version:
 
+    * Fill in the `out` array by applying `fn` to each
+      value of `a_storage` and `b_storage` assuming `out_shape`
+      and `a_shape` are the same size.
+
+    Broadcasted version:
+
+    * Fill in the `out` array by applying `fn` to each
+      value of `a_storage` and `b_storage` assuming `a_shape`
+      and `b_shape` broadcast to `out_shape`.
 
     Args:
         fn: function mapping two floats to float to apply
@@ -108,7 +139,20 @@ def zip(fn):
     Higher-order tensor zip function ::
 
       fn_zip = zip(fn)
-      c = fn_zip(a, b)
+      out = fn_zip(a, b)
+
+    Simple version ::
+
+        for i:
+            for j:
+                out[i, j] = fn(a[i, j], b[i, j])
+
+    Broadcasted version (`a` and `b` might be smaller than `out`) ::
+
+        for i:
+            for j:
+                out[i, j] = fn(a[i, 0], b[0, j])
+
 
     Args:
         fn: function from two floats-to-float to apply
@@ -116,7 +160,7 @@ def zip(fn):
         b (:class:`TensorData`): tensor to zip over
 
     Returns:
-        :class:`Tensor` : new tensor
+        :class:`TensorData` : new tensor data
     """
 
     f = tensor_zip(fn)
@@ -135,10 +179,10 @@ def zip(fn):
 
 def tensor_reduce(fn):
     """
-    Higher-order tensor reduce function. ::
+    Low-level implementation of tensor reduce.
 
-      fn_reduce = tensor_reduce(fn)
-      c = fn_reduce(out, ...)
+    * `out_shape` will be the same as `a_shape`
+       except with `reduce_dim` turned to size `1`
 
     Args:
         fn: reduction function mapping two floats to float
@@ -148,23 +192,13 @@ def tensor_reduce(fn):
         a_storage (array): storage for `a` tensor
         a_shape (array): shape for `a` tensor
         a_strides (array): strides for `a` tensor
-        reduce_shape (array): shape of reduction (1 for dimension kept, shape value for dimensions summed out)
-        reduce_size (int): size of reduce shape
+        reduce_dim (int): dimension to reduce out
 
     Returns:
         None : Fills in `out`
     """
 
-    def _reduce(
-        out,
-        out_shape,
-        out_strides,
-        a_storage,
-        a_shape,
-        a_strides,
-        reduce_shape,
-        reduce_size,
-    ):
+    def _reduce(out, out_shape, out_strides, a_storage, a_shape, a_strides, reduce_dim):
         raise NotImplementedError('Need to include this file from past assignment.')
 
     return _reduce
@@ -175,59 +209,38 @@ def reduce(fn, start=0.0):
     Higher-order tensor reduce function. ::
 
       fn_reduce = reduce(fn)
-      reduced = fn_reduce(a, dims)
+      out = fn_reduce(a, dim)
+
+    Simple version ::
+
+        for j:
+            out[1, j] = start
+            for i:
+                out[1, j] = fn(out[1, j], a[i, j])
 
 
     Args:
         fn: function from two floats-to-float to apply
         a (:class:`TensorData`): tensor to reduce over
-        dims (list, optional): list of dims to reduce
-        out (:class:`TensorData`, optional): tensor to reduce into
-
+        dim (int): int of dim to reduce
 
     Returns:
-        :class:`Tensor` : new tensor
+        :class:`TensorData` : new tensor
     """
-
     f = tensor_reduce(fn)
 
-    # START Code Update
-    def ret(a, dims=None, out=None):
-        old_shape = None
-        if out is None:
-            out_shape = list(a.shape)
-            for d in dims:
-                out_shape[d] = 1
-            # Other values when not sum.
-            out = a.zeros(tuple(out_shape))
-            out._tensor._storage[:] = start
-        else:
-            old_shape = out.shape
-            diff = len(a.shape) - len(out.shape)
-            out = out.view(*([1] * diff + list(old_shape)))
+    def ret(a, dim):
+        out_shape = list(a.shape)
+        out_shape[dim] = 1
 
-        # Assume they are the same dim
-        assert len(out.shape) == len(a.shape)
+        # Other values when not sum.
+        out = a.zeros(tuple(out_shape))
+        out._tensor._storage[:] = start
 
-        # Create a reduce shape / reduce size
-        reduce_shape = []
-        reduce_size = 1
-        for i, s in enumerate(a.shape):
-            if out.shape[i] == 1:
-                reduce_shape.append(s)
-                reduce_size *= s
-            else:
-                reduce_shape.append(1)
-
-        # Apply
-        f(*out.tuple(), *a.tuple(), reduce_shape, reduce_size)
-
-        if old_shape is not None:
-            out = out.view(*old_shape)
+        f(*out.tuple(), *a.tuple(), dim)
         return out
 
     return ret
-    # END Code Update
 
 
 class TensorOps:

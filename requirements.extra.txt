@@ -1,4 +1,7 @@
 networkx==2.4
-matplotlib==3.3.0
-git+https://github.com/facebookresearch/visdom
 pydot==1.4.1
+streamlit==0.75.0
+watchdog==1.0.2
+plotly==4.14.3
+python-mnist
+torch==1.6.0

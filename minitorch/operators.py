@@ -1,7 +1,13 @@
+"""
+Collection of the core mathematical operators used throughout the code base.
+"""
+
+
 import math
 
-## Task 0.1
-## Mathematical operators
+# ## Task 0.1
+
+# Implementation of a prelude of elementary functions.
 
 
 def mul(x, y):
@@ -36,6 +42,11 @@ def eq(x, y):
 
 def max(x, y):
     ":math:`f(x) =` x if x is greater than y else y"
+    raise NotImplementedError('Need to include this file from past assignment.')
+
+
+def is_close(x, y):
+    ":math:`f(x) = |x - y| < 1e-2` "
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
@@ -75,11 +86,6 @@ def relu(x):
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
-def relu_back(x, y):
-    ":math:`f(x) =` y if x is greater than 0 else 0"
-    raise NotImplementedError('Need to include this file from past assignment.')
-
-
 EPS = 1e-6
 
 
@@ -93,21 +99,29 @@ def exp(x):
     return math.exp(x)
 
 
-def log_back(a, b):
-    return b / (a + EPS)
+def log_back(x, d):
+    r"If :math:`f = log` as above, compute :math:`d \times f'(x)`"
+    raise NotImplementedError('Need to include this file from past assignment.')
 
 
 def inv(x):
     ":math:`f(x) = 1/x`"
-    return 1.0 / x
+    raise NotImplementedError('Need to include this file from past assignment.')
 
 
-def inv_back(a, b):
-    return -(1.0 / a ** 2) * b
+def inv_back(x, d):
+    r"If :math:`f(x) = 1/x` compute :math:`d \times f'(x)`"
+    raise NotImplementedError('Need to include this file from past assignment.')
 
 
-## Task 0.3
-## Higher-order functions.
+def relu_back(x, d):
+    r"If :math:`f = relu` compute :math:`d \times f'(x)`"
+    raise NotImplementedError('Need to include this file from past assignment.')
+
+
+# ## Task 0.3
+
+# Small library of elementary higher-order functions for practice.
 
 
 def map(fn):
@@ -131,7 +145,7 @@ def map(fn):
 
 def negList(ls):
     "Use :func:`map` and :func:`neg` to negate each element in `ls`"
-    return map(neg)(ls)
+    raise NotImplementedError('Need to include this file from past assignment.')
 
 
 def zipWith(fn):
@@ -155,7 +169,7 @@ def zipWith(fn):
 
 def addLists(ls1, ls2):
     "Add the elements of `ls1` and `ls2` using :func:`zipWith` and :func:`add`"
-    return zipWith(add)(ls1, ls2)
+    raise NotImplementedError('Need to include this file from past assignment.')
 
 
 def reduce(fn, start):

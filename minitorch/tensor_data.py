@@ -27,15 +27,15 @@ def index_to_position(index, strides):
     raise NotImplementedError('Need to include this file from past assignment.')
 
 
-def count(position, shape, out_index):
+def to_index(ordinal, shape, out_index):
     """
-    Convert a `position` to an index in the `shape`.
+    Convert an `ordinal` to an index in the `shape`.
     Should ensure that enumerating position 0 ... size of a
     tensor produces every index exactly once. It
     may not be the inverse of `index_to_position`.
 
     Args:
-        position (int): current position.
+        ordinal (int): ordinal position to convert.
         shape (tuple): tensor shape.
         out_index (array): the index corresponding to position.
 
@@ -114,7 +114,7 @@ class TensorData:
         self.shape = shape
         assert len(self._storage) == self.size
 
-    def to_cuda_(self):
+    def to_cuda_(self):  # pragma: no cover
         if not numba.cuda.is_cuda_array(self._storage):
             self._storage = numba.cuda.to_device(self._storage)
 
@@ -158,7 +158,7 @@ class TensorData:
         lshape = array(self.shape)
         out_index = array(self.shape)
         for i in range(self.size):
-            count(i, lshape, out_index)
+            to_index(i, lshape, out_index)
             yield tuple(out_index)
 
     def sample(self):

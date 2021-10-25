@@ -7,6 +7,9 @@ from .tensor_data import TensorData
 from . import operators
 
 
+# This class is very similar to Scalar so we implemented it for you.
+
+
 class Tensor(Variable):
     """
     Tensor is a generalization of Scalar in that it is a Variable that
@@ -80,7 +83,13 @@ class Tensor(Variable):
             self, self.backend.Inv.apply(self._ensure_tensor(b))
         )
 
+    def __rtruediv__(self, b):
+        return self.backend.Mul.apply(
+            self._ensure_tensor(b), self.backend.Inv.apply(self)
+        )
+
     def __matmul__(self, b):
+        "Not used until Module 3"
         return self.backend.MatMul.apply(self, b)
 
     def __lt__(self, b):
@@ -95,6 +104,12 @@ class Tensor(Variable):
     def __neg__(self):
         return self.backend.Neg.apply(self)
 
+    def all(self, dim=None):
+        return self.backend.All.apply(self, dim)
+
+    def is_close(self, y):
+        return self.backend.IsClose.apply(self, y)
+
     def sigmoid(self):
         return self.backend.Sigmoid.apply(self)
 
@@ -103,6 +118,10 @@ class Tensor(Variable):
 
     def log(self):
         return self.backend.Log.apply(self)
+
+    def item(self):
+        assert self.size == 1
+        return self[0]
 
     def exp(self):
         return self.backend.Exp.apply(self)
@@ -113,7 +132,10 @@ class Tensor(Variable):
 
     def mean(self, dim=None):
         "Compute the mean over dimension `dim`"
-        return self.backend.Mean.apply(self, dim)
+        if dim is not None:
+            return self.sum(dim) / self.shape[dim]
+        else:
+            return self.sum() / self.size
 
     def permute(self, *order):
         "Permute tensor dimensions to *order"
@@ -143,7 +165,7 @@ class Tensor(Variable):
     # Internal methods used for autodiff.
     def _type_(self, backend):
         self.backend = backend
-        if backend.cuda:
+        if backend.cuda:  # pragma: no cover
             self._tensor.to_cuda_()
 
     def _new(self, tensor_data):
@@ -155,20 +177,41 @@ class Tensor(Variable):
         return Tensor(TensorData(storage, shape, strides), backend=backend)
 
     def expand(self, other):
-        "Method used to allow for backprop over reduce."
+        """
+        Method used to allow for backprop over broadcasting.
+        This method is called when the output of `backward`
+        is a different size than the input of `forward`.
 
+
+        Parameters:
+            other (class:`Tensor`): backward tensor (must broadcast with self)
+
+        Returns:
+            Expanded version of `other` with the right derivatives
+
+        """
+
+        # Case 1: Both the same shape.
         if self.shape == other.shape:
             return other
-        shape = TensorData.shape_broadcast(self.shape, other.shape)
-        buf = self.zeros(shape)
+
+        # Case 2: Backward is a smaller than self. Broadcast up.
+        true_shape = TensorData.shape_broadcast(self.shape, other.shape)
+        buf = self.zeros(true_shape)
         self.backend._id_map(other, out=buf)
-        if self.shape == shape:
+        if self.shape == true_shape:
             return buf
-        buf2 = self.zeros(self.shape)
-        # START CODE CHANGE
-        buf2 = self.backend._add_reduce(buf, out=buf2)
-        # END CODE CHANGE
-        return buf2
+
+        # Case 3: Still different, reduce extra dims.
+        out = buf
+        orig_shape = [1] * (len(out.shape) - len(self.shape)) + list(self.shape)
+        for dim, shape in enumerate(out.shape):
+            if orig_shape[dim] == 1 and shape != 1:
+                out = self.backend._add_reduce(out, dim)
+        assert out.size == self.size, f"{out.shape} {self.shape}"
+        # START CODE CHANGE (2021)
+        return Tensor.make(out._tensor._storage, self.shape, backend=self.backend)
+        # END CODE CHANGE (2021)
 
     def zeros(self, shape=None):
         def zero(shape):

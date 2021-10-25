@@ -51,12 +51,14 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
     mul_zip = tensor_ops.zip(operators.mul)
     lt_zip = tensor_ops.zip(operators.lt)
     eq_zip = tensor_ops.zip(operators.eq)
+    is_close_zip = tensor_ops.zip(operators.is_close)
     relu_back_zip = tensor_ops.zip(operators.relu_back)
     log_back_zip = tensor_ops.zip(operators.log_back)
     inv_back_zip = tensor_ops.zip(operators.inv_back)
 
     # Reduce
-    add_reduce = tensor_ops.reduce(operators.add)
+    add_reduce = tensor_ops.reduce(operators.add, 0.0)
+    mul_reduce = tensor_ops.reduce(operators.mul, 1.0)
 
     class Backend:
         cuda = is_cuda
@@ -142,30 +144,31 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
             def forward(ctx, a, dim):
                 ctx.save_for_backward(a.shape, dim)
                 if dim is not None:
-                    return add_reduce(a, [dim])
+                    return add_reduce(a, dim)
                 else:
-                    return add_reduce(a, list(range(a.dims))).view(1)
+                    return add_reduce(
+                        a.contiguous().view(int(operators.prod(a.shape))), 0
+                    )
 
             @staticmethod
             def backward(ctx, grad_output):
                 a_shape, dim = ctx.saved_values
-                # START Code Update
                 if dim is None:
                     out = grad_output.zeros(a_shape)
                     out._tensor._storage[:] = grad_output[0]
                     return out
                 else:
                     return grad_output
-                # END Code Update
 
-        class Mean(Function):
+        class All(Function):
             @staticmethod
             def forward(ctx, a, dim):
-                raise NotImplementedError('Need to include this file from past assignment.')
-
-            @staticmethod
-            def backward(ctx, grad_output):
-                raise NotImplementedError('Need to include this file from past assignment.')
+                if dim is not None:
+                    return mul_reduce(a, dim)
+                else:
+                    return mul_reduce(
+                        a.contiguous().view(int(operators.prod(a.shape))), 0
+                    )
 
         class LT(Function):
             @staticmethod
@@ -183,6 +186,11 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
 
             @staticmethod
             def backward(ctx, grad_output):
+                raise NotImplementedError('Need to include this file from past assignment.')
+
+        class IsClose(Function):
+            @staticmethod
+            def forward(ctx, a, b):
                 raise NotImplementedError('Need to include this file from past assignment.')
 
         class Permute(Function):
@@ -230,7 +238,7 @@ def make_tensor_backend(tensor_ops, is_cuda=False):
                 def transpose(a):
                     order = list(range(a.dims))
                     order[-2], order[-1] = order[-1], order[-2]
-                    return a.permute(*order)
+                    return a._new(a._tensor.permute(*order))
 
                 return (
                     tensor_ops.matrix_multiply(grad_output, transpose(t2)),
@@ -276,7 +284,7 @@ def rand(shape, backend=TensorFunctions, requires_grad=False):
     return tensor
 
 
-def tensor(ls, shape=None, backend=TensorFunctions, requires_grad=False):
+def _tensor(ls, shape=None, backend=TensorFunctions, requires_grad=False):
     """
     Produce a tensor with data ls and shape `shape`.
 
@@ -289,14 +297,12 @@ def tensor(ls, shape=None, backend=TensorFunctions, requires_grad=False):
     Returns:
         :class:`Tensor` : new tensor
     """
-    if not shape:
-        shape = (len(ls),)
     tensor = Tensor.make(ls, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
     return tensor
 
 
-def tensor_fromlist(ls, backend=TensorFunctions, requires_grad=False):
+def tensor(ls, backend=TensorFunctions, requires_grad=False):
     """
     Produce a tensor with data and shape from ls
 
@@ -323,7 +329,7 @@ def tensor_fromlist(ls, backend=TensorFunctions, requires_grad=False):
 
     cur = flatten(ls)
     shape = shape(ls)
-    return tensor(cur, tuple(shape), backend=backend, requires_grad=requires_grad)
+    return _tensor(cur, tuple(shape), backend=backend, requires_grad=requires_grad)
 
 
 # Gradient check for tensors
@@ -347,8 +353,24 @@ def grad_check(f, *vals):
     random.seed(10)
     out = f(*vals)
     out.sum().backward()
+    err_msg = """
+
+Gradient check error for function %s.
+
+Input %s
+
+Received derivative %f for argument %d and index %s,
+but was expecting derivative %f from central difference.
+
+"""
 
     for i, x in enumerate(vals):
         ind = x._tensor.sample()
         check = grad_central_difference(f, *vals, arg=i, ind=ind)
-        np.testing.assert_allclose(x.grad[ind], check, 1e-2, 1e-2)
+        np.testing.assert_allclose(
+            x.grad[ind],
+            check,
+            1e-2,
+            1e-2,
+            err_msg=err_msg % (f, vals, x.grad[ind], i, ind, check),
+        )

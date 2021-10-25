@@ -1,6 +1,6 @@
 import numpy as np
 from .tensor_data import (
-    count,
+    to_index,
     index_to_position,
     broadcast_index,
     shape_broadcast,
@@ -9,20 +9,25 @@ from .tensor_data import (
 from numba import njit, prange
 
 
+# TIP: Use `NUMBA_DISABLE_JIT=1 pytest tests/ -m task3_1` to run these tests without JIT.
+
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
-count = njit(inline="always")(count)
+to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
 
 
 def tensor_map(fn):
     """
-    NUMBA higher-order tensor map function. ::
+    NUMBA low_level tensor_map function. See `tensor_ops.py` for description.
 
-      fn_map = tensor_map(fn)
-      fn_map(out, ... )
+    Optimizations:
+
+        * Main loop in parallel
+        * All indices use numpy buffers
+        * When `out` and `in` are stride-aligned, avoid indexing
 
     Args:
         fn: function mappings floats-to-floats to apply.
@@ -49,8 +54,8 @@ def map(fn):
     Higher-order tensor map function ::
 
       fn_map = map(fn)
-      b = fn_map(a)
-
+      fn_map(a, out)
+      out
 
     Args:
         fn: function from float-to-float to apply.
@@ -76,10 +81,14 @@ def map(fn):
 
 def tensor_zip(fn):
     """
-    NUMBA higher-order tensor zipWith (or map2) function ::
+    NUMBA higher-order tensor zip function. See `tensor_ops.py` for description.
 
-      fn_zip = tensor_zip(fn)
-      fn_zip(out, ...)
+
+    Optimizations:
+
+        * Main loop in parallel
+        * All indices use numpy buffers
+        * When `out`, `a`, `b` are stride-aligned, avoid indexing
 
     Args:
         fn: function maps two floats to float to apply.
@@ -116,7 +125,7 @@ def tensor_zip(fn):
 
 def zip(fn):
     """
-    Higher-order tensor zip function ::
+    Higher-order tensor zip function.
 
       fn_zip = zip(fn)
       c = fn_zip(a, b)
@@ -127,7 +136,7 @@ def zip(fn):
         b (:class:`Tensor`): tensor to zip over
 
     Returns:
-        :class:`Tensor` : new tensor
+        :class:`Tensor` : new tensor data
     """
     f = tensor_zip(njit()(fn))
 
@@ -142,7 +151,13 @@ def zip(fn):
 
 def tensor_reduce(fn):
     """
-    NUMBA higher-order tensor reduce function.
+    NUMBA higher-order tensor reduce function. See `tensor_ops.py` for description.
+
+    Optimizations:
+
+        * Main loop in parallel
+        * All indices use numpy buffers
+        * Inner-loop should not call any functions or write non-local variables
 
     Args:
         fn: reduction function mapping two floats to float.
@@ -152,24 +167,14 @@ def tensor_reduce(fn):
         a_storage (array): storage for `a` tensor.
         a_shape (array): shape for `a` tensor.
         a_strides (array): strides for `a` tensor.
-        reduce_shape (array): shape of reduction (1 for dimension kept, shape value for dimensions summed out)
-        reduce_size (int): size of reduce shape
+        reduce_dim (int): dimension to reduce out
 
     Returns:
         None : Fills in `out`
 
     """
 
-    def _reduce(
-        out,
-        out_shape,
-        out_strides,
-        a_storage,
-        a_shape,
-        a_strides,
-        reduce_shape,
-        reduce_size,
-    ):
+    def _reduce(out, out_shape, out_strides, a_storage, a_shape, a_strides, reduce_dim):
         # TODO: Implement for Task 3.1.
         raise NotImplementedError('Need to implement for Task 3.1')
 
@@ -181,14 +186,13 @@ def reduce(fn, start=0.0):
     Higher-order tensor reduce function. ::
 
       fn_reduce = reduce(fn)
-      reduced = fn_reduce(a, dims)
+      out = fn_reduce(a, dim)
 
 
     Args:
         fn: function from two floats-to-float to apply
         a (:class:`Tensor`): tensor to reduce over
-        dims (list, optional): list of dims to reduce
-        out (:class:`Tensor`, optional): tensor to reduce into
+        dim (int): int of dim to reduce
 
     Returns:
         :class:`Tensor` : new tensor
@@ -196,44 +200,21 @@ def reduce(fn, start=0.0):
 
     f = tensor_reduce(njit()(fn))
 
-    def ret(a, dims=None, out=None):
-        old_shape = None
-        if out is None:
-            out_shape = list(a.shape)
-            for d in dims:
-                out_shape[d] = 1
-            # Other values when not sum.
-            out = a.zeros(tuple(out_shape))
-            out._tensor._storage[:] = start
-        else:
-            old_shape = out.shape
-            diff = len(a.shape) - len(out.shape)
-            out = out.view(*([1] * diff + list(old_shape)))
+    def ret(a, dim):
+        out_shape = list(a.shape)
+        out_shape[dim] = 1
 
-        # Assume they are the same dim
-        assert len(out.shape) == len(a.shape)
+        # Other values when not sum.
+        out = a.zeros(tuple(out_shape))
+        out._tensor._storage[:] = start
 
-        # Create a reduce shape / reduce size
-        reduce_shape = []
-        reduce_size = 1
-        for i, s in enumerate(a.shape):
-            if out.shape[i] == 1:
-                reduce_shape.append(s)
-                reduce_size *= s
-            else:
-                reduce_shape.append(1)
-
-        # Apply
-        f(*out.tuple(), *a.tuple(), np.array(reduce_shape), reduce_size)
-
-        if old_shape is not None:
-            out = out.view(*old_shape)
+        f(*out.tuple(), *a.tuple(), dim)
         return out
 
     return ret
 
 
-@njit(parallel=True)
+@njit(parallel=True, fastmath=True)
 def tensor_matrix_multiply(
     out,
     out_shape,
@@ -252,6 +233,13 @@ def tensor_matrix_multiply(
 
         assert a_shape[-1] == b_shape[-2]
 
+    Optimizations:
+
+        * Outer loop in parallel
+        * No index buffers or function calls
+        * Inner loop should have no global writes, 1 multiply.
+
+
     Args:
         out (array): storage for `out` tensor
         out_shape (array): shape for `out` tensor
@@ -266,6 +254,8 @@ def tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
+    a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
+    b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
     # TODO: Implement for Task 3.2.
     raise NotImplementedError('Need to implement for Task 3.2')
@@ -273,32 +263,49 @@ def tensor_matrix_multiply(
 
 def matrix_multiply(a, b):
     """
-    Tensor matrix multiply
+    Batched tensor matrix multiply ::
 
-    Should work for any tensor shapes that broadcast in the first n-2 dims and
-    have ::
+        for n:
+          for i:
+            for j:
+              for k:
+                out[n, i, j] += a[n, i, k] * b[n, k, j]
+
+    Where n indicates an optional broadcasted batched dimension.
+
+    Should work for tensor shapes of 3 dims ::
 
         assert a.shape[-1] == b.shape[-2]
 
     Args:
-        a (:class:`Tensor`): tensor a
-        b (:class:`Tensor`): tensor b
+        a (:class:`Tensor`): tensor data a
+        b (:class:`Tensor`): tensor data b
 
     Returns:
-        :class:`Tensor` : new tensor
+        :class:`Tensor` : new tensor data
     """
 
-    # Create out shape
-    # START CODE CHANGE
+    # Make these always be a 3 dimensional multiply
+    both_2d = 0
+    if len(a.shape) == 2:
+        a = a.contiguous().view(1, a.shape[0], a.shape[1])
+        both_2d += 1
+    if len(b.shape) == 2:
+        b = b.contiguous().view(1, b.shape[0], b.shape[1])
+        both_2d += 1
+    both_2d = both_2d == 2
+
     ls = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
     ls.append(a.shape[-2])
     ls.append(b.shape[-1])
     assert a.shape[-1] == b.shape[-2]
-    # END CODE CHANGE
     out = a.zeros(tuple(ls))
 
-    # Call main function
     tensor_matrix_multiply(*out.tuple(), *a.tuple(), *b.tuple())
+
+    # Undo 3d if we added it.
+    if both_2d:
+        out = out.view(out.shape[1], out.shape[2])
     return out
 
 
