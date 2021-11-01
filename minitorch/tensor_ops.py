@@ -6,6 +6,8 @@ from .tensor_data import (
     shape_broadcast,
     MAX_DIMS,
 )
+from minitorch import Tensor
+from typing import Callable
 
 
 def tensor_map(fn):
@@ -44,7 +46,7 @@ def tensor_map(fn):
     return _map
 
 
-def map(fn):
+def map(fn: Callable[[float], float]) -> Callable[[Tensor], Tensor]:
     """
     Higher-order tensor map function ::
 
@@ -135,7 +137,7 @@ def tensor_zip(fn):
     return _zip
 
 
-def zip(fn):
+def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:
     """
     Higher-order tensor zip function ::
 
@@ -206,7 +208,7 @@ def tensor_reduce(fn):
     return _reduce
 
 
-def reduce(fn, start=0.0):
+def reduce(fn: Callable[[float, float], float], start: float = 0.0) -> Callable[[Tensor, float], Tensor]:
     """
     Higher-order tensor reduce function. ::
 
