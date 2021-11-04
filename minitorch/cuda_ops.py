@@ -336,5 +336,63 @@ def tensor_matrix_multiply(
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
     BLOCK_DIM = 32
-    # TODO: Implement for Task 3.3.
-    raise NotImplementedError('Need to implement for Task 3.3')
+    # TODO: Implement for Task 3.4.
+    raise NotImplementedError('Need to implement for Task 3.4')
+
+
+def matrix_multiply(a, b):
+    """
+    Tensor matrix multiply
+
+    Should work for any tensor shapes that broadcast in the first n-2 dims and
+    have ::
+
+        assert a.shape[-1] == b.shape[-2]
+
+    Args:
+        a (:class:`Tensor`): tensor a
+        b (:class:`Tensor`): tensor b
+
+    Returns:
+        :class:`Tensor` : new tensor
+    """
+
+    # Make these always be a 3 dimensional multiply
+    both_2d = 0
+    if len(a.shape) == 2:
+        a = a.contiguous().view(1, a.shape[0], a.shape[1])
+        both_2d += 1
+    if len(b.shape) == 2:
+        b = b.contiguous().view(1, b.shape[0], b.shape[1])
+        both_2d += 1
+    both_2d = both_2d == 2
+
+    ls = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
+    ls.append(a.shape[-2])
+    ls.append(b.shape[-1])
+    assert a.shape[-1] == b.shape[-2]
+    out = a.zeros(tuple(ls))
+
+    # One block per batch, extra rows, extra col
+    blockspergrid = (
+        (out.shape[1] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
+        (out.shape[2] + (THREADS_PER_BLOCK - 1)) // THREADS_PER_BLOCK,
+        out.shape[0],
+    )
+    threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK, 1)
+
+    tensor_matrix_multiply[blockspergrid, threadsperblock](
+        *out.tuple(), out.size, *a.tuple(), *b.tuple()
+    )
+
+    # Undo 3d if we added it.
+    if both_2d:
+        out = out.view(out.shape[1], out.shape[2])
+    return out
+
+
+class CudaOps:
+    map = map
+    zip = zip
+    reduce = reduce
+    matrix_multiply = matrix_multiply
