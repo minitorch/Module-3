@@ -157,6 +157,16 @@ if numba.cuda.is_available():
         out = b2.sum(0)
         assert_close(s, out[0])
 
+    @pytest.mark.task3_3
+    def test_sum_practice_other_dims():
+        x = [[random.random() for i in range(32)] for j in range(16)]
+        b = minitorch.tensor(x)
+        s = b.sum(1)
+        b2 = minitorch.tensor(x, backend=shared["cuda"])
+        out = b2.sum(1)
+        for i in range(16):
+            assert_close(s[i, 0], out[i, 0])
+
     @pytest.mark.task3_4
     def test_mul_practice1():
         x = [[random.random() for i in range(2)] for j in range(2)]
