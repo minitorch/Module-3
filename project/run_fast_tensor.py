@@ -1,11 +1,13 @@
-import minitorch
-import datasets
-import numba
 import random
 
-FastTensorBackend = minitorch.make_tensor_backend(minitorch.FastOps)
+import numba
+
+import minitorch
+
+datasets = minitorch.datasets
+FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 if numba.cuda.is_available():
-    GPUBackend = minitorch.make_tensor_backend(minitorch.CudaOps, is_cuda=True)
+    GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
 
 
 def default_log_fn(epoch, total_loss, correct, losses):
@@ -28,7 +30,7 @@ class Network(minitorch.Module):
 
     def forward(self, x):
         # TODO: Implement for Task 3.5.
-        raise NotImplementedError('Need to implement for Task 3.5')
+        raise NotImplementedError("Need to implement for Task 3.5")
 
 
 class Linear(minitorch.Module):
@@ -42,7 +44,7 @@ class Linear(minitorch.Module):
 
     def forward(self, x):
         # TODO: Implement for Task 3.5.
-        raise NotImplementedError('Need to implement for Task 3.5')
+        raise NotImplementedError("Need to implement for Task 3.5")
 
 
 class FastTrain:
