@@ -95,7 +95,7 @@ class FastTrain:
                 y = minitorch.tensor(data.y, backend=self.backend)
                 out = self.model.forward(X).view(y.shape[0])
                 y2 = minitorch.tensor(data.y)
-                correct = int(((out.get_data() > 0.5) == y2).sum()[0])
+                correct = int(((out.detach() > 0.5) == y2).sum()[0])
                 log_fn(epoch, total_loss, correct, losses)
 
 
@@ -115,11 +115,11 @@ if __name__ == "__main__":
     PTS = args.PTS
 
     if args.DATASET == "xor":
-        data = datasets.xor(PTS)
+        data = minitorch.datasets["Xor"](PTS)
     elif args.DATASET == "simple":
-        data = datasets.simple(PTS)
+        data = minitorch.datasets["Simple"].simple(PTS)
     elif args.DATASET == "split":
-        data = datasets.split(PTS)
+        data = minitorch.datasets["Split"](PTS)
 
     HIDDEN = int(args.HIDDEN)
     RATE = args.RATE
