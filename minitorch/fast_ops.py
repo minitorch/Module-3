@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, Any
 
 import numpy as np
-from numba import njit, prange
+from numba import prange
+from numba import njit as _njit
 
 from .tensor_data import (
     MAX_DIMS,
@@ -25,18 +26,24 @@ if TYPE_CHECKING:
 # This code will JIT compile fast versions your tensor_data functions.
 # If you get an error, read the docs for NUMBA as to what is allowed
 # in these functions.
-to_index = njit(inline="always")(to_index)
-index_to_position = njit(inline="always")(index_to_position)
-broadcast_index = njit(inline="always")(broadcast_index)
+Fn = TypeVar("Fn")
+
+
+def njit(fn: Fn, **kwargs: Any) -> Fn:
+    return _njit(inline="always", **kwargs)(fn)  # type: ignore
+
+
+to_index = njit(to_index)
+index_to_position = njit(index_to_position)
+broadcast_index = njit(broadcast_index)
 
 
 class FastOps(TensorOps):
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
-        "See `tensor_ops.py`"
-
+        """See `tensor_ops.py`"""
         # This line JIT compiles your tensor_map
-        f = tensor_map(njit()(fn))
+        f = tensor_map(njit(fn))
 
         def ret(a: Tensor, out: Optional[Tensor] = None) -> Tensor:
             if out is None:
@@ -48,9 +55,8 @@ class FastOps(TensorOps):
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:
-        "See `tensor_ops.py`"
-
-        f = tensor_zip(njit()(fn))
+        """See `tensor_ops.py`"""
+        f = tensor_zip(njit(fn))
 
         def ret(a: Tensor, b: Tensor) -> Tensor:
             c_shape = shape_broadcast(a.shape, b.shape)
@@ -64,8 +70,8 @@ class FastOps(TensorOps):
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[[Tensor, int], Tensor]:
-        "See `tensor_ops.py`"
-        f = tensor_reduce(njit()(fn))
+        """See `tensor_ops.py`"""
+        f = tensor_reduce(njit(fn))
 
         def ret(a: Tensor, dim: int) -> Tensor:
             out_shape = list(a.shape)
@@ -82,8 +88,7 @@ class FastOps(TensorOps):
 
     @staticmethod
     def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
-        """
-        Batched tensor matrix multiply ::
+        """Batched tensor matrix multiply ::
 
             for n:
               for i:
@@ -98,13 +103,15 @@ class FastOps(TensorOps):
             assert a.shape[-1] == b.shape[-2]
 
         Args:
+        ----
             a : tensor data a
             b : tensor data b
 
         Returns:
+        -------
             New tensor data
-        """
 
+        """
         # Make these always be a 3 dimensional multiply
         both_2d = 0
         if len(a.shape) == 2:
@@ -133,10 +140,9 @@ class FastOps(TensorOps):
 
 
 def tensor_map(
-    fn: Callable[[float], float]
+    fn: Callable[[float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
-    """
-    NUMBA low_level tensor_map function. See `tensor_ops.py` for description.
+    """NUMBA low_level tensor_map function. See `tensor_ops.py` for description.
 
     Optimizations:
 
@@ -145,10 +151,13 @@ def tensor_map(
     * When `out` and `in` are stride-aligned, avoid indexing
 
     Args:
+    ----
         fn: function mappings floats-to-floats to apply.
 
     Returns:
+    -------
         Tensor map function.
+
     """
 
     def _map(
@@ -162,17 +171,15 @@ def tensor_map(
         # TODO: Implement for Task 3.1.
         raise NotImplementedError("Need to implement for Task 3.1")
 
-    return njit(parallel=True)(_map)  # type: ignore
+    return njit(_map, parallel=True)  # type: ignore
 
 
 def tensor_zip(
-    fn: Callable[[float, float], float]
+    fn: Callable[[float, float], float],
 ) -> Callable[
     [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
 ]:
-    """
-    NUMBA higher-order tensor zip function. See `tensor_ops.py` for description.
-
+    """NUMBA higher-order tensor zip function. See `tensor_ops.py` for description.
 
     Optimizations:
 
@@ -181,10 +188,13 @@ def tensor_zip(
     * When `out`, `a`, `b` are stride-aligned, avoid indexing
 
     Args:
+    ----
         fn: function maps two floats to float to apply.
 
     Returns:
+    -------
         Tensor zip function.
+
     """
 
     def _zip(
@@ -201,14 +211,13 @@ def tensor_zip(
         # TODO: Implement for Task 3.1.
         raise NotImplementedError("Need to implement for Task 3.1")
 
-    return njit(parallel=True)(_zip)  # type: ignore
+    return njit(_zip, parallel=True)  # type: ignore
 
 
 def tensor_reduce(
-    fn: Callable[[float, float], float]
+    fn: Callable[[float, float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides, int], None]:
-    """
-    NUMBA higher-order tensor reduce function. See `tensor_ops.py` for description.
+    """NUMBA higher-order tensor reduce function. See `tensor_ops.py` for description.
 
     Optimizations:
 
@@ -217,10 +226,13 @@ def tensor_reduce(
     * Inner-loop should not call any functions or write non-local variables
 
     Args:
+    ----
         fn: reduction function mapping two floats to float.
 
     Returns:
+    -------
         Tensor reduce function
+
     """
 
     def _reduce(
@@ -235,7 +247,7 @@ def tensor_reduce(
         # TODO: Implement for Task 3.1.
         raise NotImplementedError("Need to implement for Task 3.1")
 
-    return njit(parallel=True)(_reduce)  # type: ignore
+    return njit(_reduce, parallel=True)  # type: ignore
 
 
 def _tensor_matrix_multiply(
@@ -249,8 +261,7 @@ def _tensor_matrix_multiply(
     b_shape: Shape,
     b_strides: Strides,
 ) -> None:
-    """
-    NUMBA tensor matrix multiply function.
+    """NUMBA tensor matrix multiply function.
 
     Should work for any tensor shapes that broadcast as long as
 
@@ -266,6 +277,7 @@ def _tensor_matrix_multiply(
 
 
     Args:
+    ----
         out (Storage): storage for `out` tensor
         out_shape (Shape): shape for `out` tensor
         out_strides (Strides): strides for `out` tensor
@@ -277,7 +289,9 @@ def _tensor_matrix_multiply(
         b_strides (Strides): strides for `b` tensor
 
     Returns:
+    -------
         None : Fills in `out`
+
     """
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
@@ -286,4 +300,5 @@ def _tensor_matrix_multiply(
     raise NotImplementedError("Need to implement for Task 3.2")
 
 
-tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)
+tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
+assert tensor_matrix_multiply is not None

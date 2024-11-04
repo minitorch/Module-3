@@ -2,6 +2,7 @@ import random
 from typing import Callable, Dict, Iterable, List, Tuple
 
 import numba
+import numba.cuda
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import DataObject, data, integers, lists, permutations
@@ -44,7 +45,7 @@ if numba.cuda.is_available():
 @given(lists(small_floats, min_size=1))
 @pytest.mark.parametrize("backend", backend_tests)
 def test_create(backend: str, t1: List[float]) -> None:
-    "Create different tensors."
+    """Create different tensors."""
     t2 = minitorch.tensor(t1, backend=shared[backend])
     for i in range(len(t1)):
         assert t1[i] == t2[i]
@@ -59,7 +60,7 @@ def test_one_args(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run forward for all one arg functions above."
+    """Run forward for all one arg functions above."""
     t1 = data.draw(tensors(backend=shared[backend]))
     name, base_fn, tensor_fn = fn
     t2 = tensor_fn(t1)
@@ -76,7 +77,7 @@ def test_two_args(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run forward for all two arg functions above."
+    """Run forward for all two arg functions above."""
     t1, t2 = data.draw(shaped_tensors(2, backend=shared[backend]))
     name, base_fn, tensor_fn = fn
     t3 = tensor_fn(t1, t2)
@@ -92,7 +93,7 @@ def test_one_derivative(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run backward for all one arg functions above."
+    """Run backward for all one arg functions above."""
     t1 = data.draw(tensors(backend=shared[backend]))
     name, _, tensor_fn = fn
     grad_check(tensor_fn, t1)
@@ -107,7 +108,7 @@ def test_two_grad(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run backward for all two arg functions above."
+    """Run backward for all two arg functions above."""
     t1, t2 = data.draw(shaped_tensors(2, backend=shared[backend]))
     name, _, tensor_fn = fn
     grad_check(tensor_fn, t1, t2)
@@ -122,7 +123,7 @@ def test_reduce(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run backward for all reduce functions above."
+    """Run backward for all reduce functions above."""
     t1 = data.draw(tensors(backend=shared[backend]))
     name, _, tensor_fn = fn
     grad_check(tensor_fn, t1)
@@ -217,7 +218,7 @@ if numba.cuda.is_available():
 
     @pytest.mark.task3_4
     def test_mul_practice3() -> None:
-        "Small real example"
+        """Small real example"""
         x1 = [[random.random() for i in range(2)] for j in range(2)]
         y1 = [[random.random() for i in range(2)] for j in range(2)]
         z = minitorch.tensor(x1, backend=shared["fast"]) @ minitorch.tensor(
@@ -234,7 +235,7 @@ if numba.cuda.is_available():
 
     @pytest.mark.task3_4
     def test_mul_practice4() -> None:
-        "Extend to require 2 blocks"
+        """Extend to require 2 blocks"""
         size = 33
         x1 = [[random.random() for i in range(size)] for j in range(size)]
         y1 = [[random.random() for i in range(size)] for j in range(size)]
@@ -252,7 +253,7 @@ if numba.cuda.is_available():
 
     @pytest.mark.task3_4
     def test_mul_practice5() -> None:
-        "Extend to require a batch"
+        """Extend to require a batch"""
         size = 33
         x1 = [
             [[random.random() for i in range(size)] for j in range(size)]
@@ -277,7 +278,7 @@ if numba.cuda.is_available():
 
     @pytest.mark.task3_4
     def test_mul_practice6() -> None:
-        "Extend to require a batch"
+        """Extend to require a batch"""
         size_a = 45
         size_b = 40
         size_in = 33
@@ -313,7 +314,7 @@ def test_two_grad_broadcast(
     backend: str,
     data: DataObject,
 ) -> None:
-    "Run backward for all two arg functions above with broadcast."
+    """Run backward for all two arg functions above with broadcast."""
     t1, t2 = data.draw(shaped_tensors(2, backend=shared[backend]))
     name, base_fn, tensor_fn = fn
 
@@ -328,7 +329,7 @@ def test_two_grad_broadcast(
 @settings(max_examples=100)
 @pytest.mark.parametrize("backend", backend_tests)
 def test_permute(backend: str, data: DataObject) -> None:
-    "Check permutations for all backends."
+    """Check permutations for all backends."""
     t1 = data.draw(tensors(backend=shared[backend]))
     permutation = data.draw(permutations(range(len(t1.shape))))
 
